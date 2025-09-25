@@ -1,0 +1,14 @@
+# Build output
+target/
+
+# IDE
+.idea/
+*.iml
+
+# Local secrets
+src/main/resources/application-secrets.properties
+
+# OS files
+.DS_Store
+Thumbs.db
+

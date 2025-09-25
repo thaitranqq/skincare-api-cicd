@@ -1,0 +1,19 @@
+version: '3.8'
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: genie-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: geniedb
+      MYSQL_USER: genie
+      MYSQL_PASSWORD: "1234"
+      MYSQL_ROOT_PASSWORD: "rootpass"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./scripts/create_mysql_manual.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
+volumes:
+  mysql-data:
