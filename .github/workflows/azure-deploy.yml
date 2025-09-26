@@ -26,9 +26,14 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Find JAR file
+        id: package
+        run: |
+          echo "##[set-output name=path;]$(find target -type f -name '*.jar' | grep -v 'sources\|javadoc' | head -n 1)"
+
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v3
         with:
           app-name: exedemo
           slot-name: production
-          package: target/*.jar
+          package: ${{ steps.package.outputs.path }}
