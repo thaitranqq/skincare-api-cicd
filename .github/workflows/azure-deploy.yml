@@ -21,7 +21,7 @@ jobs:
       - name: Build with Maven
         run: mvn clean package -DskipTests
 
-      - name: List JAR files
+      - name: List JAR files in target directory
         run: ls -l target/*.jar
 
       - name: Azure Login
@@ -32,14 +32,17 @@ jobs:
       - name: Find JAR file
         id: package
         run: |
-          echo "path=$(find target -type f -name '*.jar' | grep -v 'sources\|javadoc' | head -n 1)" >> $GITHUB_OUTPUT
+          # Tìm file .jar trong thư mục target
+          jar_path=$(find target -type f -name '*.jar' | grep -v 'sources\|javadoc' | head -n 1)
+          echo "JAR path is: $jar_path"
+          echo "path=$jar_path" >> $GITHUB_OUTPUT  # Lưu vào GITHUB_OUTPUT để truy xuất
 
       - name: Show JAR path
-        run: echo "JAR path is ${{ steps.package.outputs.path }}"
+        run: echo "JAR path is ${{ steps.package.outputs.path }}"  # Kiểm tra lại đường dẫn file .jar
 
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v3
         with:
           app-name: exedemo
           slot-name: production
-          package: ${{ steps.package.outputs.path }}
+          package: ${{ steps.package.outputs.path }}  # Sử dụng đúng đường dẫn .jar

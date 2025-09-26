@@ -38,4 +38,4 @@ jobs:
         with:
           app-name: exedemo
           slot-name: production
-          package: '*.jar'  # hoặc cụ thể tên jar nếu muốn
+          package: '*.jar'
