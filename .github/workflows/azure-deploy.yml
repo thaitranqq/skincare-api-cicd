@@ -2,26 +2,26 @@ deploy:
   runs-on: ubuntu-latest
   needs: build
   steps:
-    - name: Download JAR artifact
+    - name: Download artifact
       uses: actions/download-artifact@v4
       with:
         name: java-app
-        path: java-app
+        path: java-app  # Tải về thư mục java-app
 
-    - name: Debug: Show downloaded JAR
+    - name: List files in java-app
       run: ls -lh java-app/
-
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Find JAR file path
       id: findjar
       run: |
         jar_path=$(find java-app -type f -name '*.jar' | head -n 1)
-        echo "Found JAR: $jar_path"
+        echo "Found JAR file: $jar_path"
         echo "jarpath=$jar_path" >> $GITHUB_OUTPUT
+
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v3
