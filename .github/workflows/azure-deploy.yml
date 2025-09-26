@@ -1,56 +1,31 @@
-name: Build and Deploy to Azure
+deploy:
+  runs-on: ubuntu-latest
+  needs: build
+  steps:
+    - name: Download JAR artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: java-app
+        path: java-app
 
-on:
-  push:
-    branches:
-      - main
+    - name: Debug: Show downloaded JAR
+      run: ls -lh java-app/
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Set up Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
+    - name: Find JAR file path
+      id: findjar
+      run: |
+        jar_path=$(find java-app -type f -name '*.jar' | head -n 1)
+        echo "Found JAR: $jar_path"
+        echo "jarpath=$jar_path" >> $GITHUB_OUTPUT
 
-      - name: Build with Maven
-        run: mvn clean package -DskipTests
-
-      - name: List JAR files
-        run: ls -lh target/
-
-      - name: Upload JAR artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: java-app
-          path: target/*.jar
-
-  deploy:
-    runs-on: ubuntu-latest
-    needs: build
-    steps:
-      - name: Download JAR artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: java-app
-          path: java-app
-
-      - name: Show downloaded JAR
-        run: ls -lh java-app/
-
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy to Azure WebApp
-        uses: azure/webapps-deploy@v3
-        with:
-          app-name: exedemo
-          slot-name: production
-          package: java-app/*.jar
+    - name: Deploy to Azure WebApp
+      uses: azure/webapps-deploy@v3
+      with:
+        app-name: exedemo
+        slot-name: production
+        package: ${{ steps.findjar.outputs.jarpath }}
