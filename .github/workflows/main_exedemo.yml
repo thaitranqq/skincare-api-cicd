@@ -1,3 +1,10 @@
+name: Build and Deploy to Azure
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -33,9 +40,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Find JAR file
+        id: findjar
+        run: |
+          jar_file=$(find . -type f -name '*.jar' | head -n 1)
+          echo "jarpath=$jar_file" >> $GITHUB_OUTPUT
+
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v3
         with:
           app-name: exedemo
           slot-name: production
-          package: '*.jar'
+          package: ${{ steps.findjar.outputs.jarpath }}

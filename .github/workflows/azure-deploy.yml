@@ -6,17 +6,8 @@ deploy:
       uses: actions/download-artifact@v4
       with:
         name: java-app
-        path: java-app  # Tải về thư mục java-app
+        path: java-app
 
-    - name: List files in java-app
-      run: ls -lh java-app/
-
-    - name: Find JAR file path
-      id: findjar
-      run: |
-        jar_path=$(find java-app -type f -name '*.jar' | head -n 1)
-        echo "Found JAR file: $jar_path"
-        echo "jarpath=$jar_path" >> $GITHUB_OUTPUT
 
     - name: Azure Login
       uses: azure/login@v1
@@ -28,4 +19,5 @@ deploy:
       with:
         app-name: exedemo
         slot-name: production
-        package: ${{ steps.findjar.outputs.jarpath }}
+        package:
+
