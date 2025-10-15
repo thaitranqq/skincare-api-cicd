@@ -55,14 +55,12 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html").permitAll()
-                .anyRequest().authenticated()
-            )
-            .oauth2Login(oauth2 -> {
-                oauth2.successHandler(oAuth2LoginSuccessHandler);
-            });
+                // 👉 Chỉ áp dụng filter này cho Swagger + tài nguyên tĩnh
+                .securityMatcher("/swagger-ui/**", "/v3/api-docs/**", "/swagger-ui.html", "/webjars/**")
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().permitAll() // ✅ Cho phép toàn bộ Swagger không cần login
+                );
         return http.build();
     }
 
