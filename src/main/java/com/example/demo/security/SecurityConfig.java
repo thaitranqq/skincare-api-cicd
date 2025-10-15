@@ -1,12 +1,6 @@
 package com.example.demo.security;
 
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -24,10 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
 import java.util.List;
 
 @Configuration
@@ -37,23 +28,6 @@ public class SecurityConfig {
 
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
-
-    // --- DEBUGGING FILTER ---
-    public static class DebugFilter extends OncePerRequestFilter {
-        private static final Logger logger = LoggerFactory.getLogger(DebugFilter.class);
-        private final String chainName;
-
-        public DebugFilter(String chainName) {
-            this.chainName = chainName;
-        }
-
-        @Override
-        protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-            logger.info(">>> [SECURITY DEBUG] Request to '{}' is being processed by SecurityFilterChain: '{}'", request.getRequestURI(), this.chainName);
-            filterChain.doFilter(request, response);
-        }
-    }
-    // --- END DEBUGGING FILTER ---
 
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
@@ -65,7 +39,6 @@ public class SecurityConfig {
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/api/**")
-            .addFilterBefore(new DebugFilter("API_CHAIN"), CorsFilter.class)
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(AbstractHttpConfigurer::disable)
             .formLogin(AbstractHttpConfigurer::disable)
@@ -88,7 +61,6 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .addFilterBefore(new DebugFilter("WEB_CHAIN"), CorsFilter.class)
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
                 .anyRequest().authenticated()
