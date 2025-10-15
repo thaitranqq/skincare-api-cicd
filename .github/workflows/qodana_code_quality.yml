@@ -1,9 +1,8 @@
 name: Qodana
-
 on:
-  workflow_dispatch: # Cho phép chạy thủ công trong tab Actions
-  pull_request:      # Tự động chạy khi có Pull Request
-  push:              # Tự động chạy khi có push vào các nhánh dưới đây
+  workflow_dispatch:
+  pull_request:
+  push:
     branches:
       - main
       - 'releases/*'
@@ -15,36 +14,23 @@ jobs:
       contents: write
       pull-requests: write
       checks: write
-
     steps:
-      # 1️⃣ Checkout source code
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      # 2️⃣ Thiết lập JDK (phiên bản nên khớp với dự án Spring Boot của bạn)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: 'temurin' # Dùng Temurin thay vì Microsoft JDK
           java-version: '17'
 
-      # 3️⃣ Chạy Qodana scan
       - name: Run Qodana Scan
         uses: JetBrains/qodana-action@v2025.2
         with:
-          pr-mode: true               # Bình luận kết quả vào Pull Request
-          upload-result: true         # Upload kết quả lên Qodana Cloud
+          pr-mode: false
+          cache-default-branch-only: true
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN_727643565 }}
-          QODANA_ENDPOINT: https://qodana.cloud
-
-      # 4️⃣ Lưu báo cáo Qodana làm artifact (để tải về trong Actions)
-      - name: Upload Qodana report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: qodana-report
-          path: .qodana/
+          QODANA_ENDPOINT: 'https://qodana.cloud'
