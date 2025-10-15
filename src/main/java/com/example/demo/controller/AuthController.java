@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.common.ApiResponse;
-import com.example.demo.identity.service.AuthService;
+import com.example.demo.service.AuthService;
 import com.example.demo.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,9 +19,15 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/signup")
-    public ResponseEntity<ApiResponse<Void>> signup(@RequestBody Map<String, Object> body) {
+    public ResponseEntity<ApiResponse<String>> signup(@RequestBody Map<String, Object> body) {
         authService.signup(body);
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok());
+        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok("Signup successful. Please check your email to verify your account."));
+    }
+
+    @GetMapping("/verify-email")
+    public ResponseEntity<String> verifyEmail(@RequestParam("token") String token) {
+        authService.verifyEmail(token);
+        return ResponseEntity.ok("Your account has been successfully verified. You can now close this tab and log in.");
     }
 
     @PostMapping("/signin")
@@ -62,21 +68,25 @@ public class AuthController {
 
     @GetMapping("/me")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getMe(@AuthenticationPrincipal CurrentUser currentUser) {
-        Long userId = (currentUser != null) ? currentUser.getId() : 1L;
-        Map<String, Object> me = authService.getMe(userId);
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("User not authenticated."));
+        }
+        Map<String, Object> me = authService.getMe(currentUser.getId());
         return ResponseEntity.ok(ApiResponse.ok(me));
     }
 
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<Void>> updateMe(@RequestBody Map<String, Object> body,
                                                       @AuthenticationPrincipal CurrentUser currentUser) {
-        Long userId = (currentUser != null) ? currentUser.getId() : 1L;
-        authService.updateMe(userId, body);
+        if (currentUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("User not authenticated."));
+        }
+        authService.updateMe(currentUser.getId(), body);
         return ResponseEntity.ok(ApiResponse.ok());
     }
 
     @GetMapping("/debug/principal")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> debugPrincipal(@AuthenticationPrincipal com.example.demo.security.CurrentUser currentUser) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> debugPrincipal(@AuthenticationPrincipal CurrentUser currentUser) {
         var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
         Map<String, Object> info = Map.of(
                 "principal", currentUser,

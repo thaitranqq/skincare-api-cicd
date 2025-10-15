@@ -1,5 +1,6 @@
-package com.example.demo.personalization.model;
+package com.example.demo.model;
 
+import com.example.demo.personalization.model.SkinType;
 import jakarta.persistence.*;
 import lombok.Data;
 

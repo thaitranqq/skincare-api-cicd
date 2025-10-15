@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.personalization.dto.ProfileDTO;
-import com.example.demo.personalization.service.ProfileService;
+import com.example.demo.service.impl.ProfileServiceImpl;
 import com.example.demo.security.CurrentUser;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -15,7 +15,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ProfileController {
 
-    private final ProfileService profileService;
+    private final ProfileServiceImpl profileService;
 
     @GetMapping
     public ResponseEntity<ProfileDTO> getProfile(@AuthenticationPrincipal CurrentUser currentUser) {

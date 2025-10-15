@@ -1,16 +1,18 @@
-package com.example.demo.personalization.service;
+package com.example.demo.service.impl;
 
 import com.example.demo.personalization.dto.ProfileDTO;
-import com.example.demo.personalization.model.Profile;
-import com.example.demo.personalization.repository.ProfileRepository;
+import com.example.demo.model.Profile;
+import com.example.demo.repository.ProfileRepository;
+import com.example.demo.personalization.service.ProfileMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import com.example.demo.service.ProfileService;
 
 import java.util.*;
 
 @Service
 @RequiredArgsConstructor
-public class ProfileService {
+public class ProfileServiceImpl implements ProfileService {
 
     private final ProfileRepository profileRepository;
     private final ProfileMapper profileMapper;

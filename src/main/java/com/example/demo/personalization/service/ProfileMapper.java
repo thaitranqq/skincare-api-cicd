@@ -1,7 +1,7 @@
 package com.example.demo.personalization.service;
 
 import com.example.demo.personalization.dto.ProfileDTO;
-import com.example.demo.personalization.model.Profile;
+import com.example.demo.model.Profile;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
