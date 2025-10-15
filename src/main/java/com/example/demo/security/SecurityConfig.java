@@ -7,7 +7,6 @@ import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -29,18 +28,20 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    /**
-     * Configures paths that should be completely ignored by Spring Security.
-     * This is the best way to handle public static resources and documentation.
-     */
-    @Bean
-    public WebSecurityCustomizer webSecurityCustomizer() {
-        return (web) -> web.ignoring().requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html");
-    }
-
-    // Chain 1: Stateless API endpoints secured with JWT
+    // Chain 1: Publicly accessible Swagger endpoints
     @Bean
     @Order(1)
+    public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+            .securityMatcher("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            .csrf(AbstractHttpConfigurer::disable);
+        return http.build();
+    }
+
+    // Chain 2: Stateless API endpoints secured with JWT
+    @Bean
+    @Order(2)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .securityMatcher("/api/**")
@@ -51,7 +52,7 @@ public class SecurityConfig {
             .oauth2Login(AbstractHttpConfigurer::disable)
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll()
+                .requestMatchers("/api/v1/auth/**", "/api/v1/health/**").permitAll()
                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
@@ -62,14 +63,14 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Chain 2: Default stateful web security for everything else (e.g., OAuth2 login flow)
+    // Chain 3: Default stateful web security for everything else (e.g., OAuth2 login flow)
     @Bean
-    @Order(2)
+    @Order(3)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().authenticated() // All other requests must be authenticated
+                .anyRequest().authenticated()
             )
             .oauth2Login(oauth2 -> {
                 oauth2.successHandler(oAuth2LoginSuccessHandler);
@@ -80,7 +81,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*")); // Be more specific in production if possible
+        config.setAllowedOrigins(List.of("*")); // Be more specific in production
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization", "Content-Type"));
