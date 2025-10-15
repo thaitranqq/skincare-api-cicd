@@ -35,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
 
-    @Value("${app.base-url:http://localhost:8081}")
+    @Value("${app.base-url:https://exedemo-dwgqcxhvdsd2eqgp.koreacentral-01.azurewebsites.net}")
     private String baseUrl;
 
     // In-memory stores for OTPs and refresh tokens (simple demo implementation)
