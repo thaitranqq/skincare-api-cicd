@@ -29,11 +29,16 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
+    /**
+     * Configures paths that should be completely ignored by Spring Security.
+     * This is the best way to handle public static resources and documentation.
+     */
     @Bean
     public WebSecurityCustomizer webSecurityCustomizer() {
         return (web) -> web.ignoring().requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html");
     }
 
+    // Chain 1: Stateless API endpoints secured with JWT
     @Bean
     @Order(1)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -57,13 +62,14 @@ public class SecurityConfig {
         return http.build();
     }
 
+    // Chain 2: Default stateful web security for everything else (e.g., OAuth2 login flow)
     @Bean
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
             .authorizeHttpRequests(auth -> auth
-                .anyRequest().authenticated()
+                .anyRequest().authenticated() // All other requests must be authenticated
             )
             .oauth2Login(oauth2 -> {
                 oauth2.successHandler(oAuth2LoginSuccessHandler);
@@ -74,7 +80,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*"));
+        config.setAllowedOrigins(List.of("*")); // Be more specific in production if possible
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization", "Content-Type"));
