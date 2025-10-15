@@ -28,7 +28,7 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    // Chain 1: Publicly accessible Swagger endpoints
+    // Chain 1: Publicly accessible Swagger endpoints. Highest priority.
     @Bean
     @Order(1)
     public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -39,7 +39,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Chain 2: Stateless API endpoints secured with JWT
+    // Chain 2: Stateless API endpoints secured with JWT.
     @Bean
     @Order(2)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -63,7 +63,7 @@ public class SecurityConfig {
         return http.build();
     }
 
-    // Chain 3: Default stateful web security for everything else (e.g., OAuth2 login flow)
+    // Chain 3: Stateful web security for everything else (e.g., OAuth2 login flow).
     @Bean
     @Order(3)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
