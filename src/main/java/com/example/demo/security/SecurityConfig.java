@@ -20,6 +20,12 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
+/**
+ * Spring Security configuration with 3 security filter chains:
+ * 1. Swagger UI (public)
+ * 2. API endpoints (secured by JWT)
+ * 3. Default web/OAuth2 login
+ */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -28,69 +34,87 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    // Chain 1: Publicly accessible Swagger endpoints
+    /**
+     * Chain 1: Swagger endpoints — allow public access
+     */
     @Bean
     @Order(1)
     public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-            .csrf(AbstractHttpConfigurer::disable);
+                .securityMatcher("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html")
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+                .csrf(AbstractHttpConfigurer::disable);
         return http.build();
     }
 
-    // Chain 2: Stateless API endpoints secured with JWT
+    /**
+     * Chain 2: API endpoints — secured by JWT
+     */
     @Bean
     @Order(2)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .securityMatcher("/api/**")
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .csrf(AbstractHttpConfigurer::disable)
-            .formLogin(AbstractHttpConfigurer::disable)
-            .httpBasic(AbstractHttpConfigurer::disable)
-            .oauth2Login(AbstractHttpConfigurer::disable)
-            .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**", "/api/v1/health/**").permitAll()
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
-            .exceptionHandling(e -> e
-                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-            );
+                .securityMatcher("/api/**")
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .csrf(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .oauth2Login(AbstractHttpConfigurer::disable)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/v1/auth/**", // login, register
+                                "/api/v1/health/**" // health check
+                        ).permitAll()
+                        .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
+                )
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(e -> e
+                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
+                );
+
         return http.build();
     }
 
-    // Chain 3: Default stateful web security for everything else (e.g., OAuth2 login flow)
+    /**
+     * Chain 3: Default web security for OAuth2 login (stateful)
+     */
     @Bean
     @Order(3)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().authenticated()
-            )
-            .oauth2Login(oauth2 -> {
-                oauth2.successHandler(oAuth2LoginSuccessHandler);
-            });
+                .csrf(AbstractHttpConfigurer::disable)
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2LoginSuccessHandler)
+                );
+
         return http.build();
     }
 
+    /**
+     * Global CORS configuration for API
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*")); // Be more specific in production
+        config.setAllowedOrigins(List.of("*")); // ⚠️ Replace with specific domains in production
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization", "Content-Type"));
         config.setAllowCredentials(false);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
 
+    /**
+     * Password encoder for authentication
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
