@@ -51,6 +51,7 @@ jobs:
       - name: Deploy to Azure WebApp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: exedemo
+          # Use the correct, full, unique App Service name
+          app-name: exedemo-dwgqcxhvdsd2eqgp
           slot-name: production
           package: ${{ steps.findjar.outputs.jarpath }}
