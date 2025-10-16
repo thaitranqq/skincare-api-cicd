@@ -1,6 +1,7 @@
 package com.example.demo.security;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.security.servlet.PathRequest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -40,29 +41,18 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain apiFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/**", "/", "/index.html", "/*.js", "/*.css", "/*.ico") // Match API and static/root files
+                .securityMatcher("/api/**") // This chain only handles API requests
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
-                .formLogin(AbstractHttpConfigurer::disable)
-                .httpBasic(AbstractHttpConfigurer::disable)
-                .oauth2Login(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                // Public API endpoints
                                 "/api/v1/auth/**",
                                 "/api/v1/health/**",
                                 "/api/v1/products/**",
-                                "/api/v1/brands/**",
-
-                                // Public web assets
-                                "/",
-                                "/index.html",
-                                "/*.js",
-                                "/*.css",
-                                "/*.ico"
+                                "/api/v1/brands/**"
                         ).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -71,18 +61,22 @@ public class SecurityConfig {
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
                 );
-
         return http.build();
     }
 
     @Bean
     @Order(3)
-    public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain webFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable)
+                // This is the default chain for all other web traffic
                 .authorizeHttpRequests(auth -> auth
+                        // Allow access to the root, index.html, and all common static resource locations
+                        .requestMatchers("/", "/index.html", "/favicon.ico").permitAll()
+                        .requestMatchers(PathRequest.toStaticResources().atCommonLocations()).permitAll()
+                        // All other web requests must be authenticated (triggering OAuth2 login)
                         .anyRequest().authenticated()
                 )
+                .csrf(AbstractHttpConfigurer::disable)
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2LoginSuccessHandler)
                 );
