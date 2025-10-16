@@ -20,12 +20,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.List;
 
-/**
- * Spring Security configuration with 3 security filter chains:
- * 1. Swagger UI (public)
- * 2. API endpoints (secured by JWT)
- * 3. Default web/OAuth2 login
- */
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -34,9 +28,6 @@ public class SecurityConfig {
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler;
 
-    /**
-     * Chain 1: Swagger endpoints — allow public access
-     */
     @Bean
     @Order(1)
     public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -47,14 +38,11 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Chain 2: API endpoints — secured by JWT
-     */
     @Bean
     @Order(2)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                .securityMatcher("/api/**")
+                .securityMatcher("/api/**", "/", "/index.html", "/*.js", "/*.css", "/*.ico") // Match API and static/root files
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
@@ -63,10 +51,18 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/api/v1/auth/**", // login, register
-                                "/api/v1/health/**", // health check
-                                "/api/v1/products/**", // products
-                                "/api/v1/brands/**" // brands
+                                // Public API endpoints
+                                "/api/v1/auth/**",
+                                "/api/v1/health/**",
+                                "/api/v1/products/**",
+                                "/api/v1/brands/**",
+
+                                // Public web assets
+                                "/",
+                                "/index.html",
+                                "/*.js",
+                                "/*.css",
+                                "/*.ico"
                         ).permitAll()
                         .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
@@ -79,9 +75,6 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Chain 3: Default web security for OAuth2 login (stateful)
-     */
     @Bean
     @Order(3)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
@@ -97,13 +90,10 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * Global CORS configuration for API
-     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of("*")); // ⚠️ Replace with specific domains in production
+        config.setAllowedOrigins(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization", "Content-Type"));
@@ -114,9 +104,6 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * Password encoder for authentication
-     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
