@@ -16,7 +16,10 @@ public class Product {
     private Long id;
 
     private String name;
+
+    @Column(unique = true)
     private String upcEan;
+
     private String category;
     private String imageUrl;
     private String country;
@@ -27,6 +30,9 @@ public class Product {
     @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ProductIngredient> ingredients = new ArrayList<>();
 
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Feedback> feedbacks = new ArrayList<>();
+
     private OffsetDateTime createdAt;
 
     @PrePersist
@@ -34,4 +40,3 @@ public class Product {
         if (createdAt == null) createdAt = OffsetDateTime.now();
     }
 }
-

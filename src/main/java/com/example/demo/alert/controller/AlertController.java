@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/alerts")
+@RequestMapping("/api/v1/alerts")
 @RequiredArgsConstructor
 public class AlertController {
 
