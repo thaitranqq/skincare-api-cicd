@@ -7,6 +7,5 @@ public class FeedbackCreateRequest {
     private Long userId;
     private Long productId;
     private Integer rating;
-    private String reactionTags; // JSON string
-    private String note;
+    private String comment;
 }

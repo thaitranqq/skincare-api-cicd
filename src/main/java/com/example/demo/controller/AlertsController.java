@@ -14,15 +14,4 @@ public class AlertsController {
     public ResponseEntity<ApiResponse<Map<String, Object>>> checkProductAlerts(@PathVariable String productId) {
         return ResponseEntity.ok(ApiResponse.ok(Map.of("flags", new String[] {})));
     }
-
-    @PostMapping("/schedules")
-    public ResponseEntity<ApiResponse<Void>> createSchedule(@RequestBody Map<String, Object> body) {
-        return ResponseEntity.status(201).body(ApiResponse.ok());
-    }
-
-    @GetMapping("/schedules")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> listSchedules() {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("items", new Object[] {})));
-    }
 }
-

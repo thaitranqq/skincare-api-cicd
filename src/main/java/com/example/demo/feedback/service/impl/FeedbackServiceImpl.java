@@ -1,13 +1,16 @@
 package com.example.demo.feedback.service.impl;
 
 import com.example.demo.model.Feedback;
+import com.example.demo.model.Product;
 import com.example.demo.feedback.dto.FeedbackCreateRequest;
 import com.example.demo.feedback.dto.FeedbackDTO;
 import com.example.demo.feedback.dto.FeedbackUpdateRequest;
 import com.example.demo.feedback.service.FeedbackService;
 import com.example.demo.repository.FeedbackRepository;
+import com.example.demo.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -17,8 +20,10 @@ import java.util.stream.Collectors;
 public class FeedbackServiceImpl implements FeedbackService {
 
     private final FeedbackRepository feedbackRepository;
+    private final ProductRepository productRepository; // Injected to fetch Product entity
 
     @Override
+    @Transactional(readOnly = true)
     public List<FeedbackDTO> getAllFeedback() {
         return feedbackRepository.findAll().stream()
                 .map(this::toDto)
@@ -26,6 +31,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public FeedbackDTO getFeedbackById(Long id) {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Feedback not found with id: " + id));
@@ -33,6 +39,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FeedbackDTO> getFeedbackByUserId(Long userId) {
         return feedbackRepository.findByUserId(userId).stream()
                 .map(this::toDto)
@@ -40,6 +47,7 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<FeedbackDTO> getFeedbackByProductId(Long productId) {
         return feedbackRepository.findByProductId(productId).stream()
                 .map(this::toDto)
@@ -47,19 +55,23 @@ public class FeedbackServiceImpl implements FeedbackService {
     }
 
     @Override
+    @Transactional
     public FeedbackDTO createFeedback(FeedbackCreateRequest request) {
+        Product product = productRepository.findById(request.getProductId())
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + request.getProductId()));
+
         Feedback feedback = new Feedback();
         feedback.setUserId(request.getUserId());
-        feedback.setProductId(request.getProductId());
+        feedback.setProduct(product); // Set the Product entity
         feedback.setRating(request.getRating());
-        feedback.setReactionTags(request.getReactionTags());
-        feedback.setNote(request.getNote());
+        feedback.setComment(request.getComment()); // Use comment instead of note
 
         Feedback savedFeedback = feedbackRepository.save(feedback);
         return toDto(savedFeedback);
     }
 
     @Override
+    @Transactional
     public FeedbackDTO updateFeedback(Long id, FeedbackUpdateRequest request) {
         Feedback feedback = feedbackRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Feedback not found with id: " + id));
@@ -67,11 +79,8 @@ public class FeedbackServiceImpl implements FeedbackService {
         if (request.getRating() != null) {
             feedback.setRating(request.getRating());
         }
-        if (request.getReactionTags() != null) {
-            feedback.setReactionTags(request.getReactionTags());
-        }
-        if (request.getNote() != null) {
-            feedback.setNote(request.getNote());
+        if (request.getComment() != null) {
+            feedback.setComment(request.getComment()); // Use comment instead of note
         }
 
         Feedback updatedFeedback = feedbackRepository.save(feedback);
@@ -86,15 +95,16 @@ public class FeedbackServiceImpl implements FeedbackService {
         feedbackRepository.deleteById(id);
     }
 
-    // Simple DTO mapping method.
     private FeedbackDTO toDto(Feedback feedback) {
         FeedbackDTO dto = new FeedbackDTO();
         dto.setId(feedback.getId());
         dto.setUserId(feedback.getUserId());
-        dto.setProductId(feedback.getProductId());
+        if (feedback.getProduct() != null) {
+            dto.setProductId(feedback.getProduct().getId());
+        }
         dto.setRating(feedback.getRating());
-        dto.setReactionTags(feedback.getReactionTags());
-        dto.setNote(feedback.getNote());
+        dto.setComment(feedback.getComment()); // Use getComment()
+        dto.setStatus(feedback.getStatus());
         dto.setCreatedAt(feedback.getCreatedAt());
         return dto;
     }

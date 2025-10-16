@@ -27,15 +27,4 @@ public class JournalController {
     public ResponseEntity<ApiResponse<Void>> uploadPhoto(@PathVariable String entryId, @RequestPart("file") MultipartFile file) {
         return ResponseEntity.ok(ApiResponse.ok());
     }
-
-    @PostMapping("/routines")
-    public ResponseEntity<ApiResponse<Void>> createRoutine(@RequestBody Map<String, Object> body) {
-        return ResponseEntity.status(201).body(ApiResponse.ok());
-    }
-
-    @GetMapping("/routines")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> listRoutines() {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("items", new Object[] {})));
-    }
 }
-
