@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>LADANV – Vì làn da Việt</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&display=swap');
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at center, #001a66 0%, #000b67 100%);
+            color: #ffffff;
+            font-family: 'Playfair Display', serif;
+        }
+        .logo {
+            width: 220px;
+            margin-bottom: 30px;
+            animation: fadeIn 1.5s ease-in-out;
+        }
+        h1 {
+            font-size: 2.8rem;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+            animation: fadeInUp 1s ease forwards;
+        }
+        p {
+            max-width: 650px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 40px;
+            animation: fadeInUp 1.5s ease forwards;
+        }
+        .btn-swagger {
+            display: inline-block;
+            padding: 14px 34px;
+            border-radius: 40px;
+            font-size: 1rem;
+            color: #fff;
+            text-decoration: none;
+            background: linear-gradient(90deg, #4e8cff, #00c6ff);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 198, 255, 0.3);
+            animation: fadeInUp 2s ease forwards;
+        }
+        .btn-swagger:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(0, 198, 255, 0.5);
+        }
+        footer {
+            position: absolute;
+            bottom: 15px;
+            font-size: 0.9rem;
+            color: #a0a0ff;
+            opacity: 0.7;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+<img src="logo.png" alt="LADANV logo" class="logo" />
+<h1>LADANV</h1>
+<p>
+    Trợ lý thành phần cá nhân hóa giúp người Việt hiểu rõ làn da của mình,
+    chọn đúng sản phẩm phù hợp và chăm sóc làn da Việt bằng dữ liệu – không quảng cáo.
+</p>
+<a href="/swagger-ui/index.html" class="btn-swagger">Xem tài liệu API (Swagger UI)</a>
+<footer>© 2025 LADANV – Vì làn da Việt</footer>
+</body>
+</html>
