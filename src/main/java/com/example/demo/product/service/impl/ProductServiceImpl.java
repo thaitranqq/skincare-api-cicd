@@ -8,11 +8,14 @@ import com.example.demo.product.dto.ProductUpdateRequest;
 import com.example.demo.product.service.ProductService;
 import com.example.demo.repository.BrandRepository;
 import com.example.demo.repository.ProductRepository;
+import com.example.demo.service.AzureBlobStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -22,6 +25,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
+    private final AzureBlobStorageService azureBlobStorageService;
 
     @Override
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
@@ -45,9 +49,18 @@ public class ProductServiceImpl implements ProductService {
         product.setName(request.getName());
         product.setUpcEan(request.getUpcEan());
         product.setCategory(request.getCategory());
-        product.setImageUrl(request.getImageUrl());
         product.setCountry(request.getCountry());
         product.setBrand(brand);
+
+        MultipartFile image = request.getImage();
+        if (image != null && !image.isEmpty()) {
+            try {
+                String imageUrl = azureBlobStorageService.uploadFile(image);
+                product.setImageUrl(imageUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to upload image", e);
+            }
+        }
 
         Product savedProduct = productRepository.save(product);
         return toDto(savedProduct);
@@ -67,9 +80,6 @@ public class ProductServiceImpl implements ProductService {
         if (request.getCategory() != null) {
             product.setCategory(request.getCategory());
         }
-        if (request.getImageUrl() != null) {
-            product.setImageUrl(request.getImageUrl());
-        }
         if (request.getCountry() != null) {
             product.setCountry(request.getCountry());
         }
@@ -79,14 +89,40 @@ public class ProductServiceImpl implements ProductService {
             product.setBrand(brand);
         }
 
+        // Handle image update
+        MultipartFile newImage = request.getImage();
+        boolean deleteExistingImage = request.isDeleteImage();
+
+        if (deleteExistingImage) {
+            if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                azureBlobStorageService.deleteFile(product.getImageUrl());
+                product.setImageUrl(null);
+            }
+        } else if (newImage != null && !newImage.isEmpty()) {
+            try {
+                // Delete old image if exists
+                if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+                    azureBlobStorageService.deleteFile(product.getImageUrl());
+                }
+                // Upload new image
+                String newImageUrl = azureBlobStorageService.uploadFile(newImage);
+                product.setImageUrl(newImageUrl);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to upload new image", e);
+            }
+        }
+
         Product updatedProduct = productRepository.save(product);
         return toDto(updatedProduct);
     }
 
     @Override
     public void deleteProduct(Long id) {
-        if (!productRepository.existsById(id)) {
-            throw new RuntimeException("Product not found with id: " + id);
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        // Delete image from Azure Blob Storage if it exists
+        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+            azureBlobStorageService.deleteFile(product.getImageUrl());
         }
         productRepository.deleteById(id);
     }

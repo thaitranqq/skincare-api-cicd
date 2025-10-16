@@ -9,6 +9,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,14 +37,14 @@ public class ProductController {
         return ResponseEntity.ok(product);
     }
 
-    @PostMapping
-    public ResponseEntity<ProductDTO> createProduct(@RequestBody ProductCreateRequest request) {
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductDTO> createProduct(@ModelAttribute ProductCreateRequest request) {
         ProductDTO createdProduct = productService.createProduct(request);
         return new ResponseEntity<>(createdProduct, HttpStatus.CREATED);
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @RequestBody ProductUpdateRequest request) {
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<ProductDTO> updateProduct(@PathVariable Long id, @ModelAttribute ProductUpdateRequest request) {
         ProductDTO updatedProduct = productService.updateProduct(id, request);
         return ResponseEntity.ok(updatedProduct);
     }
