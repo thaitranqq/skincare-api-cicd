@@ -1,11 +1,8 @@
 package com.example.demo.product.dto;
 
-import com.example.demo.model.Brand;
-import com.example.demo.model.ProductIngredient;
 import lombok.Data;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 
 @Data
 public class ProductDTO {
@@ -15,7 +12,8 @@ public class ProductDTO {
     private String category;
     private String imageUrl;
     private String country;
-    private Brand brand;
-    private List<ProductIngredient> ingredients;
+    private Long brandId;
+    private String brandName;
+    // Removed List<ProductIngredient> ingredients to avoid lazy loading issues
     private OffsetDateTime createdAt;
 }

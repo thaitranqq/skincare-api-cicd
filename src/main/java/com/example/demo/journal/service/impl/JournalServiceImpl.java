@@ -123,7 +123,7 @@ public class JournalServiceImpl implements JournalService {
         dto.setDate(entry.getDate());
         dto.setTextNote(entry.getTextNote());
         if (entry.getPhotos() != null) {
-            dto.setPhotos(entry.getPhotos().stream().map(this::toDto).collect(Collectors.toList()));
+            dto.setPhotoIds(entry.getPhotos().stream().map(JournalPhoto::getId).collect(Collectors.toList()));
         }
         return dto;
     }

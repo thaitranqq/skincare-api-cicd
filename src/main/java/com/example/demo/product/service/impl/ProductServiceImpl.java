@@ -64,6 +64,9 @@ public class ProductServiceImpl implements ProductService {
         if (request.getUpcEan() != null) {
             product.setUpcEan(request.getUpcEan());
         }
+        if (request.getCategory() != null) {
+            product.setCategory(request.getCategory());
+        }
         if (request.getImageUrl() != null) {
             product.setImageUrl(request.getImageUrl());
         }
@@ -96,8 +99,11 @@ public class ProductServiceImpl implements ProductService {
         dto.setCategory(product.getCategory());
         dto.setImageUrl(product.getImageUrl());
         dto.setCountry(product.getCountry());
-        dto.setBrand(product.getBrand());
-        dto.setIngredients(product.getIngredients());
+        if (product.getBrand() != null) {
+            dto.setBrandId(product.getBrand().getId());
+            dto.setBrandName(product.getBrand().getName());
+        }
+        // Removed ingredients mapping to avoid lazy loading issues
         dto.setCreatedAt(product.getCreatedAt());
         return dto;
     }

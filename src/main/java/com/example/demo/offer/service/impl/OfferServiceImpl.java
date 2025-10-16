@@ -7,11 +7,9 @@ import com.example.demo.offer.dto.OfferCreateRequest;
 import com.example.demo.offer.dto.OfferDTO;
 import com.example.demo.offer.dto.OfferUpdateRequest;
 import com.example.demo.offer.service.OfferService;
-import com.example.demo.product.dto.ProductDTO;
 import com.example.demo.repository.OfferRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.RetailerRepository;
-import com.example.demo.retailer.dto.RetailerDTO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -110,20 +108,13 @@ public class OfferServiceImpl implements OfferService {
         dto.setUrl(offer.getUrl());
         dto.setUpdatedAt(offer.getUpdatedAt());
         
-        // Map Product and Retailer to their DTOs
         if (offer.getProduct() != null) {
-            ProductDTO productDTO = new ProductDTO();
-            productDTO.setId(offer.getProduct().getId());
-            productDTO.setName(offer.getProduct().getName());
-            // ... copy other product fields as needed
-            dto.setProduct(productDTO);
+            dto.setProductId(offer.getProduct().getId());
+            dto.setProductName(offer.getProduct().getName());
         }
         if (offer.getRetailer() != null) {
-            RetailerDTO retailerDTO = new RetailerDTO();
-            retailerDTO.setId(offer.getRetailer().getId());
-            retailerDTO.setName(offer.getRetailer().getName());
-            // ... copy other retailer fields as needed
-            dto.setRetailer(retailerDTO);
+            dto.setRetailerId(offer.getRetailer().getId());
+            dto.setRetailerName(offer.getRetailer().getName());
         }
         return dto;
     }

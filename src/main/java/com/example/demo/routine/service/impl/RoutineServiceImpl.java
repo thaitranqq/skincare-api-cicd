@@ -16,6 +16,7 @@ import com.example.demo.repository.RoutineItemRepository;
 import com.example.demo.repository.RoutineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import jakarta.transaction.Transactional; // Added import
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,6 +32,7 @@ public class RoutineServiceImpl implements RoutineService {
     // --- Routine operations ---
 
     @Override
+    @Transactional // Added @Transactional
     public List<RoutineDTO> getAllRoutines() {
         return routineRepository.findAll().stream()
                 .map(this::toDto)
@@ -38,6 +40,7 @@ public class RoutineServiceImpl implements RoutineService {
     }
 
     @Override
+    @Transactional // Added @Transactional
     public RoutineDTO getRoutineById(Long id) {
         Routine routine = routineRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Routine not found with id: " + id));
