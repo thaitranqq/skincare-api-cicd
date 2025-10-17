@@ -13,11 +13,11 @@ public class JournalPhoto {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "entry_id")
-    private JournalEntry entry;
+    private JournalEntry journalEntry;
 
     @Column(name = "file_key")
     private String fileKey;
 
-    @Column(name = "ai_features_json", columnDefinition = "json")
-    private String aiFeaturesJson; // Stored as JSON string
+    @Column(name = "ai_features_json")
+    private String aiFeaturesJson;
 }

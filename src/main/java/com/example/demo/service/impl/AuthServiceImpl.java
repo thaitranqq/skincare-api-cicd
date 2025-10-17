@@ -1,7 +1,10 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.event.EventService;
+import com.example.demo.event.EventType;
 import com.example.demo.security.JwtUtil;
 import com.example.demo.service.AuthService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -19,12 +22,14 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 @Service
 public class AuthServiceImpl implements AuthService {
@@ -34,6 +39,7 @@ public class AuthServiceImpl implements AuthService {
     private final ObjectMapper objectMapper;
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
+    private final EventService eventService;
 
     @Value("${app.base-url:https://exedemo-dwgqcxhvdsd2eqgp.koreacentral-01.azurewebsites.net}")
     private String baseUrl;
@@ -43,12 +49,13 @@ public class AuthServiceImpl implements AuthService {
     private final Map<String, Instant> otpExpiry = new ConcurrentHashMap<>(); // key -> expiry
     private final Map<String, Long> refreshStore = new ConcurrentHashMap<>(); // refreshToken -> userId
 
-    public AuthServiceImpl(JwtUtil jwtUtil, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, PasswordEncoder passwordEncoder, JavaMailSender mailSender) {
+    public AuthServiceImpl(JwtUtil jwtUtil, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, PasswordEncoder passwordEncoder, JavaMailSender mailSender, EventService eventService) {
         this.jwtUtil = jwtUtil;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
+        this.eventService = eventService;
     }
 
     @Override
@@ -97,6 +104,8 @@ public class AuthServiceImpl implements AuthService {
         }
         Long userId = key.longValue();
 
+        eventService.recordEvent(userId, EventType.REGISTER);
+
         // Assign default USER role
         Long roleId = getOrCreateUserRoleId();
         jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userId, roleId);
@@ -111,6 +120,8 @@ public class AuthServiceImpl implements AuthService {
 
         jdbcTemplate.update("INSERT INTO verification_tokens (user_id, token, expiry_date) VALUES (?, ?, ?)",
                 userId, token, Timestamp.from(expiryDate));
+
+        eventService.recordEvent(userId, EventType.EMAIL_VERIFICATION_SENT, Map.of("email", email));
 
         String verificationLink = baseUrl + "/api/v1/auth/verify-email?token=" + token;
 
@@ -141,6 +152,8 @@ public class AuthServiceImpl implements AuthService {
 
         // Activate user
         jdbcTemplate.update("UPDATE users SET status = 'ACTIVE' WHERE id = ?", userId);
+
+        eventService.recordEvent(userId, EventType.EMAIL_VERIFIED);
 
         // Delete the used token
         jdbcTemplate.update("DELETE FROM verification_tokens WHERE token = ?", token);
@@ -175,6 +188,8 @@ public class AuthServiceImpl implements AuthService {
         }
 
         Long userId = ((Number) userRow.get("id")).longValue();
+
+        eventService.recordEvent(userId, EventType.LOGIN);
 
         List<String> roles = jdbcTemplate.query(
                 "SELECT r.code FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = ?",
@@ -309,67 +324,20 @@ public class AuthServiceImpl implements AuthService {
     public Map<String, Object> getMe(Long userId) {
         Objects.requireNonNull(userId);
         Map<String, Object> result = new HashMap<>();
-        List<Map<String, Object>> users = jdbcTemplate.queryForList(
-                "SELECT id, email, phone, status, created_at FROM users WHERE id = ? LIMIT 1",
-                userId
-        );
-        if (users.isEmpty()) throw new RuntimeException("user not found");
-        Map<String, Object> u = users.get(0);
-        result.put("id", ((Number) u.get("id")).longValue());
-        result.put("email", u.get("email"));
-        result.put("phone", u.get("phone"));
-        result.put("status", u.get("status"));
-        result.put("createdAt", u.get("created_at"));
 
-        List<Map<String, Object>> profiles = jdbcTemplate.queryForList(
-                "SELECT skin_type, concerns, allergies, pregnant, conditions, lifestyle_json, goals FROM profiles WHERE user_id = ?",
-                userId
-        );
-        if (!profiles.isEmpty()) {
-            Map<String, Object> p = profiles.get(0);
-            Map<String, Object> profileOut = new HashMap<>();
-            profileOut.put("skinType", p.get("skin_type"));
-
-            try {
-                Object concernsObj = p.get("concerns");
-                if (concernsObj != null) {
-                    profileOut.put("concerns", objectMapper.readValue(concernsObj.toString(), new TypeReference<List<String>>() {}));
-                }
-            } catch (Exception ignored) {}
-
-            try {
-                Object allergiesObj = p.get("allergies");
-                if (allergiesObj != null) {
-                    profileOut.put("allergies", objectMapper.readValue(allergiesObj.toString(), new TypeReference<List<String>>() {}));
-                }
-            } catch (Exception ignored) {}
-
-            profileOut.put("pregnant", p.get("pregnant"));
-
-            try {
-                Object conditionsObj = p.get("conditions");
-                if (conditionsObj != null) {
-                    profileOut.put("conditions", objectMapper.readValue(conditionsObj.toString(), new TypeReference<List<String>>() {}));
-                }
-            } catch (Exception ignored) {}
-
-            try {
-                Object lifestyleObj = p.get("lifestyle_json");
-                if (lifestyleObj != null) {
-                    profileOut.put("lifestyle", objectMapper.readValue(lifestyleObj.toString(), new TypeReference<Map<String, Object>>() {}));
-                }
-            } catch (Exception ignored) {}
-
-            try {
-                Object goalsObj = p.get("goals");
-                if (goalsObj != null) {
-                    profileOut.put("goals", objectMapper.readValue(goalsObj.toString(), new TypeReference<List<String>>() {}));
-                }
-            } catch (Exception ignored) {}
-
-            result.put("profile", profileOut);
+        // Fetch basic user info
+        try {
+            Map<String, Object> u = jdbcTemplate.queryForMap("SELECT id, email, phone, status, created_at FROM users WHERE id = ? LIMIT 1", userId);
+            result.put("id", ((Number) u.get("id")).longValue());
+            result.put("email", u.get("email"));
+            result.put("phone", u.get("phone"));
+            result.put("status", u.get("status"));
+            result.put("createdAt", u.get("created_at"));
+        } catch (EmptyResultDataAccessException e) {
+            throw new RuntimeException("User not found");
         }
 
+        // Fetch roles
         List<String> roles = jdbcTemplate.query(
                 "SELECT r.code FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = ?",
                 (rs, rowNum) -> rs.getString("code"),
@@ -377,7 +345,89 @@ public class AuthServiceImpl implements AuthService {
         );
         result.put("roles", roles);
 
+        // Fetch full profile
+        try {
+            Map<String, Object> p = jdbcTemplate.queryForMap("SELECT skin_type, concerns, allergies, pregnant, conditions, lifestyle_json, goals FROM profiles WHERE user_id = ?", userId);
+            result.put("profile", parseJsonFields(p));
+        } catch (EmptyResultDataAccessException e) {
+            result.put("profile", null);
+        }
+
+        // Fetch profile preferences
+        try {
+            Map<String, Object> prefs = jdbcTemplate.queryForMap("SELECT prefer_functions, avoid_ingredients, budget_min, budget_max FROM profile_prefs WHERE user_id = ?", userId);
+            result.put("preferences", parseJsonFields(prefs));
+        } catch (EmptyResultDataAccessException e) {
+            result.put("preferences", null);
+        }
+
+        // Fetch user feedback
+        List<Map<String, Object>> feedback = jdbcTemplate.queryForList(
+                "SELECT id, product_id, rating, comment, created_at FROM feedback WHERE user_id = ? ORDER BY created_at DESC",
+                userId
+        );
+        result.put("feedback", feedback);
+
+        // Fetch user events
+        List<Map<String, Object>> events = jdbcTemplate.queryForList(
+                "SELECT type, payload_json, ts FROM events WHERE user_id = ? ORDER BY ts DESC",
+                userId
+        );
+        result.put("events", events.stream().map(this::parseJsonFields).collect(Collectors.toList()));
+
+        // Fetch alerts
+        List<Map<String, Object>> alerts = jdbcTemplate.queryForList(
+                "SELECT type, payload_json, status, created_at FROM alerts WHERE user_id = ? ORDER BY created_at DESC",
+                userId
+        );
+        result.put("alerts", alerts.stream().map(this::parseJsonFields).collect(Collectors.toList()));
+
+        // Fetch routines
+        List<Map<String, Object>> routines = jdbcTemplate.queryForList("SELECT id, title FROM routines WHERE user_id = ?", userId);
+        for (Map<String, Object> routine : routines) {
+            Long routineId = ((Number) routine.get("id")).longValue();
+            List<Map<String, Object>> items = jdbcTemplate.queryForList("SELECT product_id, step, time_of_day FROM routine_items WHERE routine_id = ? ORDER BY step", routineId);
+            routine.put("items", items);
+        }
+        result.put("routines", routines);
+
+        // Fetch journal entries
+        List<Map<String, Object>> journalEntries = jdbcTemplate.queryForList("SELECT id, date, text_note FROM journal_entries WHERE user_id = ? ORDER BY date DESC", userId);
+        for (Map<String, Object> entry : journalEntries) {
+            Long entryId = ((Number) entry.get("id")).longValue();
+            List<Map<String, Object>> photos = jdbcTemplate.queryForList("SELECT id, file_key, ai_features_json FROM journal_photos WHERE entry_id = ?", entryId);
+            entry.put("photos", photos.stream().map(this::parseJsonFields).collect(Collectors.toList()));
+        }
+        result.put("journal", journalEntries);
+
+        // Fetch recommendations
+        List<Map<String, Object>> recs = jdbcTemplate.queryForList("SELECT product_id, score, reason_json, created_at FROM recs WHERE user_id = ? ORDER BY created_at DESC", userId);
+        result.put("recommendations", recs.stream().map(this::parseJsonFields).collect(Collectors.toList()));
+
+        // Fetch schedules
+        List<Map<String, Object>> schedules = jdbcTemplate.queryForList("SELECT product_id, cron_expr, channel FROM schedules WHERE user_id = ?", userId);
+        result.put("schedules", schedules);
+
+        // Fetch user identities (for OAuth)
+        List<Map<String, Object>> identities = jdbcTemplate.queryForList("SELECT provider, provider_uid, created_at FROM user_identities WHERE user_id = ?", userId);
+        result.put("identities", identities);
+
         return result;
+    }
+
+    private Map<String, Object> parseJsonFields(Map<String, Object> item) {
+        Map<String, Object> newItem = new HashMap<>(item);
+        item.forEach((key, value) -> {
+            if (key.endsWith("_json") && value instanceof String) {
+                try {
+                    newItem.put(key.replace("_json", ""), objectMapper.readValue((String) value, new TypeReference<>() {}));
+                    newItem.remove(key);
+                } catch (JsonProcessingException e) {
+                    // Keep raw value if parsing fails
+                }
+            }
+        });
+        return newItem;
     }
 
     public void requestOtp(Map<String, Object> body) {
@@ -387,7 +437,7 @@ public class AuthServiceImpl implements AuthService {
         String code = String.valueOf((int) (Math.random() * 900000) + 100000); // 6-digit
         otpStore.put(dest, code);
         otpExpiry.put(dest, Instant.now().plusSeconds(300)); // 5 minutes
-        jdbcTemplate.update("INSERT INTO events (user_id, type, payload_json) VALUES (?, ?, ?)", null, "OTP_REQUEST", "{\"dest\":\"" + dest + "\",\"code\":\"" + code + "\"}");
+        eventService.recordEvent(null, EventType.OTP_REQUEST, Map.of("dest", dest, "code", code));
     }
 
     public void verifyOtp(Map<String, Object> body) {
