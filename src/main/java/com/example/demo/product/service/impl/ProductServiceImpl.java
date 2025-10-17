@@ -8,7 +8,7 @@ import com.example.demo.product.dto.ProductUpdateRequest;
 import com.example.demo.product.service.ProductService;
 import com.example.demo.repository.BrandRepository;
 import com.example.demo.repository.ProductRepository;
-import com.example.demo.service.AzureBlobStorageService;
+import com.example.demo.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,8 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -25,7 +23,7 @@ public class ProductServiceImpl implements ProductService {
 
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
-    private final AzureBlobStorageService azureBlobStorageService;
+    private final FileStorageService fileStorageService;
 
     @Override
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
@@ -55,7 +53,7 @@ public class ProductServiceImpl implements ProductService {
         MultipartFile image = request.getImage();
         if (image != null && !image.isEmpty()) {
             try {
-                String imageUrl = azureBlobStorageService.uploadFile(image);
+                String imageUrl = fileStorageService.save(image);
                 product.setImageUrl(imageUrl);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload image", e);
@@ -95,17 +93,17 @@ public class ProductServiceImpl implements ProductService {
 
         if (deleteExistingImage) {
             if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
-                azureBlobStorageService.deleteFile(product.getImageUrl());
+                fileStorageService.delete(product.getImageUrl());
                 product.setImageUrl(null);
             }
         } else if (newImage != null && !newImage.isEmpty()) {
             try {
                 // Delete old image if exists
                 if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
-                    azureBlobStorageService.deleteFile(product.getImageUrl());
+                    fileStorageService.delete(product.getImageUrl());
                 }
                 // Upload new image
-                String newImageUrl = azureBlobStorageService.uploadFile(newImage);
+                String newImageUrl = fileStorageService.save(newImage);
                 product.setImageUrl(newImageUrl);
             } catch (IOException e) {
                 throw new RuntimeException("Failed to upload new image", e);
@@ -122,7 +120,7 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
         // Delete image from Azure Blob Storage if it exists
         if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
-            azureBlobStorageService.deleteFile(product.getImageUrl());
+            fileStorageService.delete(product.getImageUrl());
         }
         productRepository.deleteById(id);
     }
