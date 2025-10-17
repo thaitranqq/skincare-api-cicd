@@ -67,7 +67,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional(readOnly = true)
     public List<FeedbackDTO> getReviewsForModeration() {
-        return feedbackRepository.findByStatus("PENDING").stream()
+        return feedbackRepository.findAll().stream()
                 .map(this::toFeedbackDto)
                 .collect(Collectors.toList());
     }
@@ -75,14 +75,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     @Transactional
     public void moderateReview(Long reviewId, String status) {
-        Feedback review = feedbackRepository.findById(reviewId)
-                .orElseThrow(() -> new RuntimeException("Review not found with id: " + reviewId));
-
-        if (!List.of("APPROVED", "REJECTED").contains(status.toUpperCase())) {
-            throw new IllegalArgumentException("Invalid status: " + status);
-        }
-        review.setStatus(status.toUpperCase());
-        feedbackRepository.save(review);
+        throw new UnsupportedOperationException("Review moderation is no longer supported as the status field has been removed.");
     }
 
     private FeedbackDTO toFeedbackDto(Feedback feedback) {
@@ -94,7 +87,6 @@ public class AdminServiceImpl implements AdminService {
         }
         dto.setRating(feedback.getRating());
         dto.setComment(feedback.getComment());
-        dto.setStatus(feedback.getStatus());
         dto.setCreatedAt(feedback.getCreatedAt());
         return dto;
     }

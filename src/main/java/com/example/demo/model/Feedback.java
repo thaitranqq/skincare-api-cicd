@@ -13,7 +13,6 @@ public class Feedback {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Reverted to simple Long to match the existing database schema and avoid User entity dependency
     @Column(name = "user_id")
     private Long userId;
 
@@ -26,7 +25,8 @@ public class Feedback {
     @Column(name = "note", columnDefinition = "text")
     private String comment;
 
-    private String status; // e.g., PENDING, APPROVED, REJECTED
+    @Column(name = "reaction_tags", columnDefinition = "json")
+    private String reactionTags;
 
     @Column(name = "created_at")
     private OffsetDateTime createdAt;
@@ -35,9 +35,6 @@ public class Feedback {
     public void prePersist() {
         if (createdAt == null) {
             createdAt = OffsetDateTime.now();
-        }
-        if (status == null) {
-            status = "PENDING"; // Default status for new feedback
         }
     }
 }
