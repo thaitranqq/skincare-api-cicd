@@ -8,6 +8,7 @@ import com.example.demo.alert.service.AlertService;
 import com.example.demo.repository.AlertRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -51,9 +52,9 @@ public class AlertServiceImpl implements AlertService {
     public AlertDTO createAlert(AlertCreateRequest request) {
         Alert alert = new Alert();
         alert.setUserId(request.getUserId());
-        alert.setType(request.getType());
-        alert.setPayloadJson(request.getPayloadJson());
-        alert.setStatus(request.getStatus());
+        alert.setType(HtmlUtils.htmlEscape(request.getType()));
+        alert.setPayloadJson(HtmlUtils.htmlEscape(request.getPayloadJson()));
+        alert.setStatus(HtmlUtils.htmlEscape(request.getStatus()));
         alert.setCreatedAt(OffsetDateTime.now());
 
         Alert savedAlert = alertRepository.save(alert);
@@ -66,13 +67,13 @@ public class AlertServiceImpl implements AlertService {
                 .orElseThrow(() -> new RuntimeException("Alert not found with id: " + id));
 
         if (request.getType() != null) {
-            alert.setType(request.getType());
+            alert.setType(HtmlUtils.htmlEscape(request.getType()));
         }
         if (request.getPayloadJson() != null) {
-            alert.setPayloadJson(request.getPayloadJson());
+            alert.setPayloadJson(HtmlUtils.htmlEscape(request.getPayloadJson()));
         }
         if (request.getStatus() != null) {
-            alert.setStatus(request.getStatus());
+            alert.setStatus(HtmlUtils.htmlEscape(request.getStatus()));
         }
 
         Alert updatedAlert = alertRepository.save(alert);

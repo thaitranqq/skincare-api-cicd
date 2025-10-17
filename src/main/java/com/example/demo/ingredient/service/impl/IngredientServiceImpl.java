@@ -8,6 +8,7 @@ import com.example.demo.ingredient.service.IngredientService;
 import com.example.demo.repository.IngredientRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,14 +36,7 @@ public class IngredientServiceImpl implements IngredientService {
     @Override
     public IngredientDTO createIngredient(IngredientCreateRequest request) {
         Ingredient ingredient = new Ingredient();
-        ingredient.setInciName(request.getInciName());
-        ingredient.setAliasVi(request.getAliasVi());
-        ingredient.setDescriptionVi(request.getDescriptionVi());
-        ingredient.setFunctions(request.getFunctions());
-        ingredient.setRiskLevel(request.getRiskLevel());
-        ingredient.setBannedIn(request.getBannedIn());
-        ingredient.setTypicalRange(request.getTypicalRange());
-        ingredient.setSources(request.getSources());
+        setIngredientProperties(ingredient, request);
 
         Ingredient savedIngredient = ingredientRepository.save(ingredient);
         return toDto(savedIngredient);
@@ -53,30 +47,7 @@ public class IngredientServiceImpl implements IngredientService {
         Ingredient ingredient = ingredientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ingredient not found with id: " + id));
 
-        if (request.getInciName() != null) {
-            ingredient.setInciName(request.getInciName());
-        }
-        if (request.getAliasVi() != null) {
-            ingredient.setAliasVi(request.getAliasVi());
-        }
-        if (request.getDescriptionVi() != null) {
-            ingredient.setDescriptionVi(request.getDescriptionVi());
-        }
-        if (request.getFunctions() != null) {
-            ingredient.setFunctions(request.getFunctions());
-        }
-        if (request.getRiskLevel() != null) {
-            ingredient.setRiskLevel(request.getRiskLevel());
-        }
-        if (request.getBannedIn() != null) {
-            ingredient.setBannedIn(request.getBannedIn());
-        }
-        if (request.getTypicalRange() != null) {
-            ingredient.setTypicalRange(request.getTypicalRange());
-        }
-        if (request.getSources() != null) {
-            ingredient.setSources(request.getSources());
-        }
+        setIngredientProperties(ingredient, request);
 
         Ingredient updatedIngredient = ingredientRepository.save(ingredient);
         return toDto(updatedIngredient);
@@ -88,6 +59,59 @@ public class IngredientServiceImpl implements IngredientService {
             throw new RuntimeException("Ingredient not found with id: " + id);
         }
         ingredientRepository.deleteById(id);
+    }
+
+    // Helper method to set properties from request, including XSS sanitization
+    private void setIngredientProperties(Ingredient ingredient, IngredientCreateRequest request) {
+        ingredient.setInciName(HtmlUtils.htmlEscape(request.getInciName()));
+        if (request.getAliasVi() != null) {
+            ingredient.setAliasVi(HtmlUtils.htmlEscape(request.getAliasVi()));
+        }
+        if (request.getDescriptionVi() != null) {
+            ingredient.setDescriptionVi(HtmlUtils.htmlEscape(request.getDescriptionVi()));
+        }
+        if (request.getFunctions() != null) {
+            ingredient.setFunctions(HtmlUtils.htmlEscape(request.getFunctions()));
+        }
+        if (request.getRiskLevel() != null) {
+            ingredient.setRiskLevel(HtmlUtils.htmlEscape(request.getRiskLevel()));
+        }
+        if (request.getBannedIn() != null) {
+            ingredient.setBannedIn(HtmlUtils.htmlEscape(request.getBannedIn()));
+        }
+        if (request.getTypicalRange() != null) {
+            ingredient.setTypicalRange(HtmlUtils.htmlEscape(request.getTypicalRange()));
+        }
+        if (request.getSources() != null) {
+            ingredient.setSources(HtmlUtils.htmlEscape(request.getSources()));
+        }
+    }
+
+    private void setIngredientProperties(Ingredient ingredient, IngredientUpdateRequest request) {
+        if (request.getInciName() != null) {
+            ingredient.setInciName(HtmlUtils.htmlEscape(request.getInciName()));
+        }
+        if (request.getAliasVi() != null) {
+            ingredient.setAliasVi(HtmlUtils.htmlEscape(request.getAliasVi()));
+        }
+        if (request.getDescriptionVi() != null) {
+            ingredient.setDescriptionVi(HtmlUtils.htmlEscape(request.getDescriptionVi()));
+        }
+        if (request.getFunctions() != null) {
+            ingredient.setFunctions(HtmlUtils.htmlEscape(request.getFunctions()));
+        }
+        if (request.getRiskLevel() != null) {
+            ingredient.setRiskLevel(HtmlUtils.htmlEscape(request.getRiskLevel()));
+        }
+        if (request.getBannedIn() != null) {
+            ingredient.setBannedIn(HtmlUtils.htmlEscape(request.getBannedIn()));
+        }
+        if (request.getTypicalRange() != null) {
+            ingredient.setTypicalRange(HtmlUtils.htmlEscape(request.getTypicalRange()));
+        }
+        if (request.getSources() != null) {
+            ingredient.setSources(HtmlUtils.htmlEscape(request.getSources()));
+        }
     }
 
     // Simple DTO mapping method.

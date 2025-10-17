@@ -36,7 +36,7 @@ public class ProfileServiceImpl implements ProfileService {
 
     public ProfileDTO updateProfile(Long userId, ProfileDTO body) {
         Profile existing = profileRepository.findById(userId).orElse(null);
-        if (body.getUserId() == null) body.setUserId(userId);
+        body.setUserId(Objects.requireNonNullElse(body.getUserId(), userId));
         Profile toSave = profileMapper.toEntity(existing, body);
         Profile saved = profileRepository.save(toSave);
         return profileMapper.toDto(saved);

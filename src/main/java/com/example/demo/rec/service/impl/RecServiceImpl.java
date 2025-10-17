@@ -8,6 +8,7 @@ import com.example.demo.rec.service.RecService;
 import com.example.demo.repository.RecRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -53,7 +54,7 @@ public class RecServiceImpl implements RecService {
         rec.setUserId(request.getUserId());
         rec.setProductId(request.getProductId());
         rec.setScore(request.getScore());
-        rec.setReasonJson(request.getReasonJson());
+        rec.setReasonJson(HtmlUtils.htmlEscape(request.getReasonJson()));
         rec.setCreatedAt(OffsetDateTime.now());
 
         Rec savedRec = recRepository.save(rec);
@@ -69,7 +70,7 @@ public class RecServiceImpl implements RecService {
             rec.setScore(request.getScore());
         }
         if (request.getReasonJson() != null) {
-            rec.setReasonJson(request.getReasonJson());
+            rec.setReasonJson(HtmlUtils.htmlEscape(request.getReasonJson()));
         }
 
         Rec updatedRec = recRepository.save(rec);

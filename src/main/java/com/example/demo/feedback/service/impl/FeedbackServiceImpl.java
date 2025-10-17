@@ -11,6 +11,7 @@ import com.example.demo.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -64,7 +65,7 @@ public class FeedbackServiceImpl implements FeedbackService {
         feedback.setUserId(request.getUserId());
         feedback.setProduct(product); // Set the Product entity
         feedback.setRating(request.getRating());
-        feedback.setComment(request.getComment()); // Use comment instead of note
+        feedback.setComment(HtmlUtils.htmlEscape(request.getComment())); // Use comment instead of note
 
         Feedback savedFeedback = feedbackRepository.save(feedback);
         return toDto(savedFeedback);
@@ -80,7 +81,7 @@ public class FeedbackServiceImpl implements FeedbackService {
             feedback.setRating(request.getRating());
         }
         if (request.getComment() != null) {
-            feedback.setComment(request.getComment()); // Use comment instead of note
+            feedback.setComment(HtmlUtils.htmlEscape(request.getComment())); // Use comment instead of note
         }
 
         Feedback updatedFeedback = feedbackRepository.save(feedback);

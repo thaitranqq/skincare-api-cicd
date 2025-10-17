@@ -8,6 +8,7 @@ import com.example.demo.retailer.service.RetailerService;
 import com.example.demo.repository.RetailerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,8 +36,8 @@ public class RetailerServiceImpl implements RetailerService {
     @Override
     public RetailerDTO createRetailer(RetailerCreateRequest request) {
         Retailer retailer = new Retailer();
-        retailer.setName(request.getName());
-        retailer.setDomain(request.getDomain());
+        retailer.setName(HtmlUtils.htmlEscape(request.getName()));
+        retailer.setDomain(HtmlUtils.htmlEscape(request.getDomain()));
 
         Retailer savedRetailer = retailerRepository.save(retailer);
         return toDto(savedRetailer);
@@ -48,10 +49,10 @@ public class RetailerServiceImpl implements RetailerService {
                 .orElseThrow(() -> new RuntimeException("Retailer not found with id: " + id));
 
         if (request.getName() != null) {
-            retailer.setName(request.getName());
+            retailer.setName(HtmlUtils.htmlEscape(request.getName()));
         }
         if (request.getDomain() != null) {
-            retailer.setDomain(request.getDomain());
+            retailer.setDomain(HtmlUtils.htmlEscape(request.getDomain()));
         }
 
         Retailer updatedRetailer = retailerRepository.save(retailer);

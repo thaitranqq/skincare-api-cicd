@@ -8,6 +8,7 @@ import com.example.demo.brand.service.BrandService;
 import com.example.demo.repository.BrandRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,7 +36,7 @@ public class BrandServiceImpl implements BrandService {
     @Override
     public BrandDTO createBrand(BrandCreateRequest request) {
         Brand brand = new Brand();
-        brand.setName(request.getName());
+        brand.setName(HtmlUtils.htmlEscape(request.getName()));
 
         Brand savedBrand = brandRepository.save(brand);
         return toDto(savedBrand);
@@ -47,7 +48,7 @@ public class BrandServiceImpl implements BrandService {
                 .orElseThrow(() -> new RuntimeException("Brand not found with id: " + id));
 
         if (request.getName() != null) {
-            brand.setName(request.getName());
+            brand.setName(HtmlUtils.htmlEscape(request.getName()));
         }
 
         Brand updatedBrand = brandRepository.save(brand);

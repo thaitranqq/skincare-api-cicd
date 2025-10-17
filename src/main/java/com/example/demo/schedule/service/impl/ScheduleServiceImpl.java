@@ -8,6 +8,7 @@ import com.example.demo.schedule.service.ScheduleService;
 import com.example.demo.repository.ScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -51,8 +52,8 @@ public class ScheduleServiceImpl implements ScheduleService {
         Schedule schedule = new Schedule();
         schedule.setUserId(request.getUserId());
         schedule.setProductId(request.getProductId());
-        schedule.setCronExpr(request.getCronExpr());
-        schedule.setChannel(request.getChannel());
+        schedule.setCronExpr(HtmlUtils.htmlEscape(request.getCronExpr()));
+        schedule.setChannel(HtmlUtils.htmlEscape(request.getChannel()));
 
         Schedule savedSchedule = scheduleRepository.save(schedule);
         return toDto(savedSchedule);
@@ -64,10 +65,10 @@ public class ScheduleServiceImpl implements ScheduleService {
                 .orElseThrow(() -> new RuntimeException("Schedule not found with id: " + id));
 
         if (request.getCronExpr() != null) {
-            schedule.setCronExpr(request.getCronExpr());
+            schedule.setCronExpr(HtmlUtils.htmlEscape(request.getCronExpr()));
         }
         if (request.getChannel() != null) {
-            schedule.setChannel(request.getChannel());
+            schedule.setChannel(HtmlUtils.htmlEscape(request.getChannel()));
         }
         if (request.getProductId() != null) {
             schedule.setProductId(request.getProductId());
