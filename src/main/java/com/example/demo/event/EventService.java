@@ -1,6 +1,7 @@
 package com.example.demo.event;
 
 import com.example.demo.model.Event;
+import com.example.demo.repository.EventRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
