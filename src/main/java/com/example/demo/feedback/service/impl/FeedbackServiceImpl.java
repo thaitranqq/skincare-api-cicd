@@ -104,7 +104,6 @@ public class FeedbackServiceImpl implements FeedbackService {
         }
         dto.setRating(feedback.getRating());
         dto.setComment(feedback.getComment()); // Use getComment()
-        dto.setStatus(feedback.getStatus());
         dto.setCreatedAt(feedback.getCreatedAt());
         return dto;
     }
