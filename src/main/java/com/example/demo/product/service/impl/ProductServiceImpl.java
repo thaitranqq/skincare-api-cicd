@@ -6,6 +6,7 @@ import com.example.demo.product.dto.ProductCreateRequest;
 import com.example.demo.product.dto.ProductDTO;
 import com.example.demo.product.dto.ProductUpdateRequest;
 import com.example.demo.product.service.ProductService;
+import com.example.demo.product.service.ProductMapper;
 import com.example.demo.repository.BrandRepository;
 import com.example.demo.repository.ProductRepository;
 import com.example.demo.storage.FileStorageService;
@@ -25,18 +26,19 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final BrandRepository brandRepository;
     private final FileStorageService fileStorageService;
+    private final ProductMapper productMapper;
 
     @Override
     public Page<ProductDTO> getAllProducts(Pageable pageable) {
         return productRepository.findAll(pageable)
-                .map(this::toDto);
+                .map(productMapper::toDto);
     }
 
     @Override
     public ProductDTO getProductById(Long id) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
-        return toDto(product);
+        return productMapper.toDto(product);
     }
 
     @Override
@@ -68,7 +70,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Product savedProduct = productRepository.save(product);
-        return toDto(savedProduct);
+        return productMapper.toDto(savedProduct);
     }
 
     @Override
@@ -118,7 +120,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         Product updatedProduct = productRepository.save(product);
-        return toDto(updatedProduct);
+        return productMapper.toDto(updatedProduct);
     }
 
     @Override
@@ -130,22 +132,5 @@ public class ProductServiceImpl implements ProductService {
             fileStorageService.delete(product.getImageUrl());
         }
         productRepository.deleteById(id);
-    }
-
-    private ProductDTO toDto(Product product) {
-        ProductDTO dto = new ProductDTO();
-        dto.setId(product.getId());
-        dto.setName(product.getName());
-        dto.setUpcEan(product.getUpcEan());
-        dto.setCategory(product.getCategory());
-        dto.setImageUrl(product.getImageUrl());
-        dto.setCountry(product.getCountry());
-        if (product.getBrand() != null) {
-            dto.setBrandId(product.getBrand().getId());
-            dto.setBrandName(product.getBrand().getName());
-        }
-        // Removed ingredients mapping to avoid lazy loading issues
-        dto.setCreatedAt(product.getCreatedAt());
-        return dto;
     }
 }

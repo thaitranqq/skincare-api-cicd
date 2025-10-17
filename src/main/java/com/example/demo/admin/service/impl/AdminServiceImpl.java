@@ -3,8 +3,8 @@ package com.example.demo.admin.service.impl;
 import com.example.demo.admin.dto.SearchStatsDTO;
 import com.example.demo.admin.dto.UserTrendDTO;
 import com.example.demo.admin.service.AdminService;
-import com.example.demo.model.Product;
 import com.example.demo.product.dto.ProductDTO;
+import com.example.demo.product.service.ProductMapper;
 import com.example.demo.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,6 +22,7 @@ public class AdminServiceImpl implements AdminService {
 
     private final ProductRepository productRepository;
     private final JdbcTemplate jdbcTemplate;
+    private final ProductMapper productMapper;
 
     @Override
     @Transactional(readOnly = true)
@@ -35,9 +36,6 @@ public class AdminServiceImpl implements AdminService {
         trends.setBySkinType(bySkinType);
 
         // Placeholder for age range trends - requires age/birthdate data in the users/profiles table
-        trends.setByAgeRange(Collections.emptyList());
-
-        // Placeholder for popular products - requires tracking product views or purchases
         trends.setPopularProducts(Collections.emptyList());
 
         return trends;
@@ -47,7 +45,7 @@ public class AdminServiceImpl implements AdminService {
     @Transactional(readOnly = true)
     public List<ProductDTO> getRiskyProductsReport() {
         return productRepository.findRiskyProducts().stream()
-                .map(this::toProductDto)
+                .map(productMapper::toDto)
                 .collect(Collectors.toList());
     }
 
@@ -58,21 +56,5 @@ public class AdminServiceImpl implements AdminService {
         stats.setBarcodeScans(Collections.emptyList());
         stats.setKeywordSearches(Collections.emptyList());
         return stats;
-    }
-
-    private ProductDTO toProductDto(Product product) {
-        ProductDTO dto = new ProductDTO();
-        dto.setId(product.getId());
-        dto.setName(product.getName());
-        dto.setUpcEan(product.getUpcEan());
-        dto.setCategory(product.getCategory());
-        dto.setImageUrl(product.getImageUrl());
-        dto.setCountry(product.getCountry());
-        if (product.getBrand() != null) {
-            dto.setBrandId(product.getBrand().getId());
-            dto.setBrandName(product.getBrand().getName());
-        }
-        dto.setCreatedAt(product.getCreatedAt());
-        return dto;
     }
 }
