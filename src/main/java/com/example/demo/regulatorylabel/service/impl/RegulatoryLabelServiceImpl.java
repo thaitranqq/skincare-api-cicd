@@ -8,6 +8,7 @@ import com.example.demo.regulatorylabel.service.RegulatoryLabelService;
 import com.example.demo.repository.RegulatoryLabelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,10 +36,10 @@ public class RegulatoryLabelServiceImpl implements RegulatoryLabelService {
     @Override
     public RegulatoryLabelDTO createRegulatoryLabel(RegulatoryLabelCreateRequest request) {
         RegulatoryLabel label = new RegulatoryLabel();
-        label.setRegion(request.getRegion());
-        label.setCode(request.getCode());
-        label.setDescription(request.getDescription());
-        label.setLevel(request.getLevel());
+        label.setRegion(HtmlUtils.htmlEscape(request.getRegion()));
+        label.setCode(HtmlUtils.htmlEscape(request.getCode()));
+        label.setDescription(HtmlUtils.htmlEscape(request.getDescription()));
+        label.setLevel(HtmlUtils.htmlEscape(request.getLevel()));
 
         RegulatoryLabel savedLabel = regulatoryLabelRepository.save(label);
         return toDto(savedLabel);
@@ -50,16 +51,16 @@ public class RegulatoryLabelServiceImpl implements RegulatoryLabelService {
                 .orElseThrow(() -> new RuntimeException("Regulatory Label not found with id: " + id));
 
         if (request.getRegion() != null) {
-            label.setRegion(request.getRegion());
+            label.setRegion(HtmlUtils.htmlEscape(request.getRegion()));
         }
         if (request.getCode() != null) {
-            label.setCode(request.getCode());
+            label.setCode(HtmlUtils.htmlEscape(request.getCode()));
         }
         if (request.getDescription() != null) {
-            label.setDescription(request.getDescription());
+            label.setDescription(HtmlUtils.htmlEscape(request.getDescription()));
         }
         if (request.getLevel() != null) {
-            label.setLevel(request.getLevel());
+            label.setLevel(HtmlUtils.htmlEscape(request.getLevel()));
         }
 
         RegulatoryLabel updatedLabel = regulatoryLabelRepository.save(label);

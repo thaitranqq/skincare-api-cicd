@@ -3,6 +3,7 @@ package com.example.demo.storage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
@@ -29,16 +30,25 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public String save(MultipartFile file) throws IOException {
-        if (file.getOriginalFilename() == null) {
+        String originalFilename = file.getOriginalFilename();
+        if (originalFilename == null) {
             throw new IOException("File has no original filename");
         }
+        // Clean the file name to prevent path traversal issues
+        String fileName = StringUtils.cleanPath(originalFilename);
+
+        // Check for path traversal characters
+        if (fileName.contains("..")) {
+            throw new SecurityException("Cannot store file with relative path outside current directory " + fileName);
+        }
+
         // Generate a unique filename to avoid conflicts
         String extension = "";
-        int i = file.getOriginalFilename().lastIndexOf('.');
-        if (i > 0) {
-            extension = file.getOriginalFilename().substring(i);
+        int i = fileName.lastIndexOf('.');
+        if (i >= 0) {
+            extension = fileName.substring(i);
         }
-        String uniqueFileName = UUID.randomUUID().toString() + extension;
+        String uniqueFileName = UUID.randomUUID() + extension;
 
         // Copy file to the target location
         Path targetLocation = this.fileStorageLocation.resolve(uniqueFileName);
@@ -54,11 +64,19 @@ public class LocalFileStorageService implements FileStorageService {
             return;
         }
         try {
-            Path filePath = this.fileStorageLocation.resolve(fileKey).normalize();
+            String safeFileKey = StringUtils.cleanPath(fileKey);
+            if (safeFileKey.contains("..")) {
+                log.warn("Path traversal attempt in delete: {}", fileKey);
+                return;
+            }
+            Path filePath = this.fileStorageLocation.resolve(safeFileKey).normalize();
+            if (!filePath.startsWith(this.fileStorageLocation)) {
+                log.warn("Attempt to delete file outside of storage directory: {}", fileKey);
+                return;
+            }
             Files.deleteIfExists(filePath);
         } catch (Exception e) {
             log.error("Could not delete file: {}", fileKey, e);
-            // Depending on the policy, you might want to re-throw or just log
         }
     }
 }

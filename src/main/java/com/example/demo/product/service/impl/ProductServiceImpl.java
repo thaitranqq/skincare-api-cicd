@@ -14,6 +14,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.HtmlUtils;
 
 import java.io.IOException;
 
@@ -44,10 +45,16 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new RuntimeException("Brand not found with id: " + request.getBrandId()));
 
         Product product = new Product();
-        product.setName(request.getName());
-        product.setUpcEan(request.getUpcEan());
-        product.setCategory(request.getCategory());
-        product.setCountry(request.getCountry());
+        product.setName(HtmlUtils.htmlEscape(request.getName()));
+        if (request.getUpcEan() != null) {
+            product.setUpcEan(HtmlUtils.htmlEscape(request.getUpcEan()));
+        }
+        if (request.getCategory() != null) {
+            product.setCategory(HtmlUtils.htmlEscape(request.getCategory()));
+        }
+        if (request.getCountry() != null) {
+            product.setCountry(HtmlUtils.htmlEscape(request.getCountry()));
+        }
         product.setBrand(brand);
 
         MultipartFile image = request.getImage();
@@ -70,16 +77,16 @@ public class ProductServiceImpl implements ProductService {
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
 
         if (request.getName() != null) {
-            product.setName(request.getName());
+            product.setName(HtmlUtils.htmlEscape(request.getName()));
         }
         if (request.getUpcEan() != null) {
-            product.setUpcEan(request.getUpcEan());
+            product.setUpcEan(HtmlUtils.htmlEscape(request.getUpcEan()));
         }
         if (request.getCategory() != null) {
-            product.setCategory(request.getCategory());
+            product.setCategory(HtmlUtils.htmlEscape(request.getCategory()));
         }
         if (request.getCountry() != null) {
-            product.setCountry(request.getCountry());
+            product.setCountry(HtmlUtils.htmlEscape(request.getCountry()));
         }
         if (request.getBrandId() != null) {
             Brand brand = brandRepository.findById(request.getBrandId())

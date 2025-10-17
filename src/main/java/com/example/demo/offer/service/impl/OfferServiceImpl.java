@@ -12,6 +12,7 @@ import com.example.demo.repository.ProductRepository;
 import com.example.demo.repository.RetailerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -64,7 +65,7 @@ public class OfferServiceImpl implements OfferService {
         offer.setProduct(product);
         offer.setRetailer(retailer);
         offer.setPrice(request.getPrice());
-        offer.setUrl(request.getUrl());
+        offer.setUrl(HtmlUtils.htmlEscape(request.getUrl()));
         offer.setUpdatedAt(OffsetDateTime.now());
 
         Offer savedOffer = offerRepository.save(offer);
@@ -80,7 +81,7 @@ public class OfferServiceImpl implements OfferService {
             offer.setPrice(request.getPrice());
         }
         if (request.getUrl() != null) {
-            offer.setUrl(request.getUrl());
+            offer.setUrl(HtmlUtils.htmlEscape(request.getUrl()));
         }
         if (request.getRetailerId() != null) {
             Retailer retailer = retailerRepository.findById(request.getRetailerId())

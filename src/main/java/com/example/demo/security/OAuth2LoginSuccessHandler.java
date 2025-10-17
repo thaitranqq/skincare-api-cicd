@@ -19,6 +19,7 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -31,14 +32,14 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
     private String redirectUri;
 
     @Override
-    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException {
         DefaultOAuth2User oauthUser = (DefaultOAuth2User) authentication.getPrincipal();
         Map<String, Object> attributes = oauthUser.getAttributes();
         String email = (String) attributes.get("email");
         String providerId = (String) attributes.get("sub");
 
         // 1. Find or create user
-        Long userId = findOrCreateUser(email, providerId);
+        long userId = findOrCreateUser(email, providerId);
 
         // 2. Load roles
         List<String> roles = jdbcTemplate.query(
@@ -61,11 +62,11 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
-    private Long findOrCreateUser(String email, String providerId) {
+    private long findOrCreateUser(String email, String providerId) {
         // Check if user exists by email
         List<Map<String, Object>> users = jdbcTemplate.queryForList("SELECT id FROM users WHERE email = ? LIMIT 1", email);
 
-        Long userId;
+        long userId;
         if (!users.isEmpty()) {
             userId = ((Number) users.get(0).get("id")).longValue();
         } else {
@@ -78,10 +79,12 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
                 ps.setString(2, "ACTIVE");
                 return ps;
             }, keyHolder);
-            userId = keyHolder.getKey().longValue();
+            Number key = keyHolder.getKey();
+            Objects.requireNonNull(key, "Failed to create user from OAuth2 login.");
+            userId = key.longValue();
 
             // Assign default USER role
-            Long roleId = getOrCreateUserRoleId();
+            long roleId = getOrCreateUserRoleId();
             jdbcTemplate.update("INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)", userId, roleId);
         }
 
@@ -94,16 +97,20 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
         return userId;
     }
 
-    private Long getOrCreateUserRoleId() {
+    private long getOrCreateUserRoleId() {
         try {
-            return jdbcTemplate.queryForObject("SELECT id FROM roles WHERE code = 'USER' LIMIT 1", Long.class);
+            Long roleId = jdbcTemplate.queryForObject("SELECT id FROM roles WHERE code = 'USER' LIMIT 1", Long.class);
+            return roleId != null ? roleId : createRoleAndGetId();
         } catch (Exception ignored) {
-            KeyHolder keyHolder = new GeneratedKeyHolder();
-            jdbcTemplate.update(conn -> {
-                PreparedStatement ps = conn.prepareStatement("INSERT INTO roles (code) VALUES ('USER')", Statement.RETURN_GENERATED_KEYS);
-                return ps;
-            }, keyHolder);
-            return keyHolder.getKey().longValue();
+            return createRoleAndGetId();
         }
+    }
+
+    private long createRoleAndGetId() {
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+        jdbcTemplate.update(conn -> conn.prepareStatement("INSERT INTO roles (code) VALUES ('USER')", Statement.RETURN_GENERATED_KEYS), keyHolder);
+        Number key = keyHolder.getKey();
+        Objects.requireNonNull(key, "Failed to create USER role.");
+        return key.longValue();
     }
 }

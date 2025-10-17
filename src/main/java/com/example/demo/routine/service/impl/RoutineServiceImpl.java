@@ -17,6 +17,7 @@ import com.example.demo.repository.RoutineRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import jakarta.transaction.Transactional; // Added import
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -58,7 +59,7 @@ public class RoutineServiceImpl implements RoutineService {
     public RoutineDTO createRoutine(RoutineCreateRequest request) {
         Routine routine = new Routine();
         routine.setUserId(request.getUserId());
-        routine.setTitle(request.getTitle());
+        routine.setTitle(HtmlUtils.htmlEscape(request.getTitle()));
 
         Routine savedRoutine = routineRepository.save(routine);
         return toDto(savedRoutine);
@@ -70,7 +71,7 @@ public class RoutineServiceImpl implements RoutineService {
                 .orElseThrow(() -> new RuntimeException("Routine not found with id: " + id));
 
         if (request.getTitle() != null) {
-            routine.setTitle(request.getTitle());
+            routine.setTitle(HtmlUtils.htmlEscape(request.getTitle()));
         }
 
         Routine updatedRoutine = routineRepository.save(routine);
@@ -107,7 +108,7 @@ public class RoutineServiceImpl implements RoutineService {
         routineItem.setRoutine(routine);
         routineItem.setProduct(product);
         routineItem.setStep(request.getStep());
-        routineItem.setTimeOfDay(request.getTimeOfDay());
+        routineItem.setTimeOfDay(HtmlUtils.htmlEscape(request.getTimeOfDay()));
 
         RoutineItem savedRoutineItem = routineItemRepository.save(routineItem);
         return toDto(savedRoutineItem);
@@ -123,7 +124,7 @@ public class RoutineServiceImpl implements RoutineService {
             routineItem.setStep(request.getStep());
         }
         if (request.getTimeOfDay() != null) {
-            routineItem.setTimeOfDay(request.getTimeOfDay());
+            routineItem.setTimeOfDay(HtmlUtils.htmlEscape(request.getTimeOfDay()));
         }
 
         RoutineItem updatedRoutineItem = routineItemRepository.save(routineItem);

@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.HtmlUtils;
 
 import java.io.IOException;
 import java.util.List;
@@ -55,6 +56,9 @@ public class JournalServiceImpl implements JournalService {
     @Transactional
     public JournalEntryDTO createJournalEntry(JournalEntryCreateRequest request) {
         JournalEntry journalEntry = journalMapper.toJournalEntry(request);
+        if (request.getTextNote() != null) {
+            journalEntry.setTextNote(HtmlUtils.htmlEscape(request.getTextNote()));
+        }
         JournalEntry savedEntry = journalEntryRepository.save(journalEntry);
         return journalMapper.toJournalEntryDTO(savedEntry);
     }
@@ -65,7 +69,9 @@ public class JournalServiceImpl implements JournalService {
         JournalEntry existingEntry = journalEntryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("JournalEntry not found with id: " + id));
         existingEntry.setDate(request.getDate());
-        existingEntry.setTextNote(request.getTextNote());
+        if (request.getTextNote() != null) {
+            existingEntry.setTextNote(HtmlUtils.htmlEscape(request.getTextNote()));
+        }
         JournalEntry updatedEntry = journalEntryRepository.save(existingEntry);
         return journalMapper.toJournalEntryDTO(updatedEntry);
     }
@@ -117,7 +123,11 @@ public class JournalServiceImpl implements JournalService {
         newPhoto.setJournalEntry(entry);
         newPhoto.setFileKey(fileKey);
         JournalPhoto savedPhoto = journalPhotoRepository.save(newPhoto);
-        return journalMapper.toJournalPhotoDTO(savedPhoto);
+        JournalPhotoDTO dto = journalMapper.toJournalPhotoDTO(savedPhoto);
+        if (dto.getFileKey() != null) {
+            dto.setFileKey(HtmlUtils.htmlEscape(dto.getFileKey()));
+        }
+        return dto;
     }
 
     @Override
@@ -139,7 +149,11 @@ public class JournalServiceImpl implements JournalService {
         JournalPhoto updatedPhoto = journalPhotoRepository.save(existingPhoto);
 
         // 5. Return the updated DTO
-        return journalMapper.toJournalPhotoDTO(updatedPhoto);
+        JournalPhotoDTO dto = journalMapper.toJournalPhotoDTO(updatedPhoto);
+        if (dto.getFileKey() != null) {
+            dto.setFileKey(HtmlUtils.htmlEscape(dto.getFileKey()));
+        }
+        return dto;
     }
 
     @Override

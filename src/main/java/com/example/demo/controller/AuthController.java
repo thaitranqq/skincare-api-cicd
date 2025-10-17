@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.lang.Nullable;
 
 import java.util.Map;
 
@@ -67,7 +68,7 @@ public class AuthController {
     }
 
     @GetMapping("/me")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getMe(@AuthenticationPrincipal CurrentUser currentUser) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> getMe(@AuthenticationPrincipal @Nullable CurrentUser currentUser) {
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("User not authenticated."));
         }
@@ -77,7 +78,7 @@ public class AuthController {
 
     @PutMapping("/me")
     public ResponseEntity<ApiResponse<Void>> updateMe(@RequestBody Map<String, Object> body,
-                                                      @AuthenticationPrincipal CurrentUser currentUser) {
+                                                      @AuthenticationPrincipal @Nullable CurrentUser currentUser) {
         if (currentUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ApiResponse.error("User not authenticated."));
         }
@@ -86,8 +87,9 @@ public class AuthController {
     }
 
     @GetMapping("/debug/principal")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> debugPrincipal(@AuthenticationPrincipal CurrentUser currentUser) {
+    public ResponseEntity<ApiResponse<Map<String, Object>>> debugPrincipal(@AuthenticationPrincipal @Nullable CurrentUser currentUser) {
         var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        assert currentUser != null;
         Map<String, Object> info = Map.of(
                 "principal", currentUser,
                 "authentication", auth != null ? Map.of(
