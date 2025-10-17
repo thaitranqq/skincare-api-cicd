@@ -1,5 +1,7 @@
 package com.example.demo.feedback.controller;
 
+import com.example.demo.event.EventService;
+import com.example.demo.event.EventType;
 import com.example.demo.feedback.dto.FeedbackCreateRequest;
 import com.example.demo.feedback.dto.FeedbackDTO;
 import com.example.demo.feedback.dto.FeedbackUpdateRequest;
@@ -10,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/feedback")
@@ -17,6 +20,7 @@ import java.util.List;
 public class FeedbackController {
 
     private final FeedbackService feedbackService;
+    private final EventService eventService;
 
     @GetMapping
     public ResponseEntity<List<FeedbackDTO>> getAllFeedback() {
@@ -45,6 +49,16 @@ public class FeedbackController {
     @PostMapping
     public ResponseEntity<FeedbackDTO> createFeedback(@RequestBody FeedbackCreateRequest request) {
         FeedbackDTO createdFeedback = feedbackService.createFeedback(request);
+        // Record the event
+        eventService.recordEvent(
+                createdFeedback.getUserId(),
+                EventType.ADD_FEEDBACK,
+                Map.of(
+                        "feedbackId", createdFeedback.getId(),
+                        "productId", createdFeedback.getProductId(),
+                        "rating", createdFeedback.getRating()
+                )
+        );
         return new ResponseEntity<>(createdFeedback, HttpStatus.CREATED);
     }
 

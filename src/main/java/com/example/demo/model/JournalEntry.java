@@ -15,14 +15,15 @@ public class JournalEntry {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Assuming a User entity exists, but using userId for loose coupling as in other services.
     @Column(name = "user_id")
     private Long userId;
 
     private LocalDate date;
 
-    @Column(name = "text_note", columnDefinition = "text")
+    @Column(name = "text_note")
     private String textNote;
 
-    @OneToMany(mappedBy = "entry", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "journalEntry", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<JournalPhoto> photos = new ArrayList<>();
 }

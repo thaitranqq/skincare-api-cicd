@@ -8,5 +8,5 @@ import java.util.List;
 
 @Repository
 public interface JournalPhotoRepository extends JpaRepository<JournalPhoto, Long> {
-    List<JournalPhoto> findByEntryId(Long entryId);
+    List<JournalPhoto> findByJournalEntryId(Long entryId);
 }
