@@ -50,7 +50,7 @@ public class JournalController {
         }
 
     // Endpoint to update (replace) an existing photo
-    @PutMapping("/photos/{photoId}")
+    @PutMapping(value = "/photos/{photoId}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE )
     public ResponseEntity<JournalPhotoDTO> updatePhoto(
             @PathVariable Long photoId,
             @RequestParam("file") MultipartFile file) {
