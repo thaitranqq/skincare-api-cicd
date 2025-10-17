@@ -327,8 +327,6 @@ public class AuthServiceImpl implements AuthService {
     public Map<String, Object> getMe(Long userId) {
         Objects.requireNonNull(userId);
         Map<String, Object> result = new HashMap<>();
-
-        // Fetch basic user info
         try {
             Map<String, Object> u = jdbcTemplate.queryForMap("SELECT id, email, phone, status, created_at FROM users WHERE id = ? LIMIT 1", userId);
             result.put("id", ((Number) u.get("id")).longValue());

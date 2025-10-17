@@ -23,7 +23,7 @@ public class Feedback {
 
     private Integer rating;
 
-    @Column(columnDefinition = "text")
+    @Column(name = "note", columnDefinition = "text")
     private String comment;
 
     private String status; // e.g., PENDING, APPROVED, REJECTED
