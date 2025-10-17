@@ -22,7 +22,6 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -363,7 +362,8 @@ public class AuthServiceImpl implements AuthService {
 
         // Fetch user feedback
         List<Map<String, Object>> feedback = jdbcTemplate.queryForList(
-                "SELECT id, product_id, rating, comment, created_at FROM feedback WHERE user_id = ? ORDER BY created_at DESC",
+                // Added backticks to `comment` and `feedback` to avoid SQL reserved keyword conflicts
+                "SELECT id, product_id, rating, `comment`, created_at FROM `feedback` WHERE user_id = ? ORDER BY created_at DESC",
                 userId
         );
         result.put("feedback", feedback);
