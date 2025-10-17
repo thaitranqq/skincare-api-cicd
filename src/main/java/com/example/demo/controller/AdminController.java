@@ -4,8 +4,9 @@ import com.example.demo.admin.dto.SearchStatsDTO;
 import com.example.demo.admin.dto.UserTrendDTO;
 import com.example.demo.admin.service.AdminService;
 import com.example.demo.common.ApiResponse;
-import com.example.demo.feedback.dto.FeedbackDTO;
 import com.example.demo.product.dto.ProductDTO;
+import com.example.demo.event.service.EventService; // Import EventService
+import com.example.demo.event.dto.EventDTO; // Import EventDTO
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import java.util.Map;
 public class AdminController {
 
     private final AdminService adminService;
+    private final EventService eventService; // Inject EventService
 
     // --- Reports & Statistics ---
 
@@ -42,22 +44,6 @@ public class AdminController {
 
     // --- Content Management ---
 
-    @GetMapping("/content/reviews")
-    public ResponseEntity<ApiResponse<List<FeedbackDTO>>> getReviewsForModeration() {
-        List<FeedbackDTO> reviews = adminService.getReviewsForModeration();
-        return ResponseEntity.ok(ApiResponse.ok(reviews));
-    }
-
-    @PostMapping("/content/reviews/{id}/moderate")
-    public ResponseEntity<ApiResponse<Void>> moderateReview(@PathVariable Long id, @RequestBody Map<String, String> body) {
-        String status = body.get("status");
-        if (status == null || status.isBlank()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error("Status is required."));
-        }
-        adminService.moderateReview(id, status);
-        return ResponseEntity.ok(ApiResponse.ok());
-    }
-
     @GetMapping("/content/qa")
     public ResponseEntity<ApiResponse<Map<String, Object>>> getQuestionsForModeration() {
         // Placeholder for Q&A moderation
@@ -76,10 +62,29 @@ public class AdminController {
         return ResponseEntity.ok(ApiResponse.ok(Map.of("suggestions", new Object[] {})));
     }
 
-    // --- Other Admin Functions ---
+    // --- Admin Event Functions ---
 
     @GetMapping("/events")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> events(@RequestParam(required = false) String type) {
-        return ResponseEntity.ok(ApiResponse.ok(Map.of("events", new Object[] {})));
+    public ResponseEntity<ApiResponse<List<EventDTO>>> getAllEvents() {
+        List<EventDTO> events = eventService.getAllEvents();
+        return ResponseEntity.ok(ApiResponse.ok(events));
+    }
+
+    @GetMapping("/events/{id}")
+    public ResponseEntity<ApiResponse<EventDTO>> getEventById(@PathVariable Long id) {
+        EventDTO event = eventService.getEventById(id);
+        return ResponseEntity.ok(ApiResponse.ok(event));
+    }
+
+    @GetMapping("/events/user/{userId}")
+    public ResponseEntity<ApiResponse<List<EventDTO>>> getEventsByUserId(@PathVariable Long userId) {
+        List<EventDTO> events = eventService.getEventsByUserId(userId);
+        return ResponseEntity.ok(ApiResponse.ok(events));
+    }
+
+    @GetMapping("/events/type/{type}")
+    public ResponseEntity<ApiResponse<List<EventDTO>>> getEventsByType(@PathVariable String type) {
+        List<EventDTO> events = eventService.getEventsByType(type);
+        return ResponseEntity.ok(ApiResponse.ok(events));
     }
 }

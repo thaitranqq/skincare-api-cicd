@@ -3,11 +3,8 @@ package com.example.demo.admin.service.impl;
 import com.example.demo.admin.dto.SearchStatsDTO;
 import com.example.demo.admin.dto.UserTrendDTO;
 import com.example.demo.admin.service.AdminService;
-import com.example.demo.feedback.dto.FeedbackDTO;
-import com.example.demo.model.Feedback;
 import com.example.demo.model.Product;
 import com.example.demo.product.dto.ProductDTO;
-import com.example.demo.repository.FeedbackRepository;
 import com.example.demo.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,7 +21,6 @@ import java.util.stream.Collectors;
 public class AdminServiceImpl implements AdminService {
 
     private final ProductRepository productRepository;
-    private final FeedbackRepository feedbackRepository;
     private final JdbcTemplate jdbcTemplate;
 
     @Override
@@ -62,33 +58,6 @@ public class AdminServiceImpl implements AdminService {
         stats.setBarcodeScans(Collections.emptyList());
         stats.setKeywordSearches(Collections.emptyList());
         return stats;
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<FeedbackDTO> getReviewsForModeration() {
-        return feedbackRepository.findAll().stream()
-                .map(this::toFeedbackDto)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional
-    public void moderateReview(Long reviewId, String status) {
-        throw new UnsupportedOperationException("Review moderation is no longer supported as the status field has been removed.");
-    }
-
-    private FeedbackDTO toFeedbackDto(Feedback feedback) {
-        FeedbackDTO dto = new FeedbackDTO();
-        dto.setId(feedback.getId());
-        dto.setUserId(feedback.getUserId()); // Corrected: Use getUserId() directly
-        if (feedback.getProduct() != null) {
-            dto.setProductId(feedback.getProduct().getId());
-        }
-        dto.setRating(feedback.getRating());
-        dto.setComment(feedback.getComment());
-        dto.setCreatedAt(feedback.getCreatedAt());
-        return dto;
     }
 
     private ProductDTO toProductDto(Product product) {
