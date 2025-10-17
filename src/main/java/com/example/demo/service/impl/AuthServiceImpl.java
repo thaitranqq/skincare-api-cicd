@@ -4,6 +4,8 @@ import com.example.demo.event.EventService;
 import com.example.demo.event.EventType;
 import com.example.demo.security.JwtUtil;
 import com.example.demo.service.AuthService;
+import com.example.demo.repository.FeedbackRepository; // Import FeedbackRepository
+import com.example.demo.model.Feedback; // Import Feedback model
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,6 +41,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JavaMailSender mailSender;
     private final EventService eventService;
+    private final FeedbackRepository feedbackRepository; // Inject FeedbackRepository
 
     @Value("${app.base-url:https://exedemo-dwgqcxhvdsd2eqgp.koreacentral-01.azurewebsites.net}")
     private String baseUrl;
@@ -48,13 +51,14 @@ public class AuthServiceImpl implements AuthService {
     private final Map<String, Instant> otpExpiry = new ConcurrentHashMap<>(); // key -> expiry
     private final Map<String, Long> refreshStore = new ConcurrentHashMap<>(); // refreshToken -> userId
 
-    public AuthServiceImpl(JwtUtil jwtUtil, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, PasswordEncoder passwordEncoder, JavaMailSender mailSender, EventService eventService) {
+    public AuthServiceImpl(JwtUtil jwtUtil, JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, PasswordEncoder passwordEncoder, JavaMailSender mailSender, EventService eventService, FeedbackRepository feedbackRepository) {
         this.jwtUtil = jwtUtil;
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
         this.passwordEncoder = passwordEncoder;
         this.mailSender = mailSender;
         this.eventService = eventService;
+        this.feedbackRepository = feedbackRepository; // Initialize FeedbackRepository
     }
 
     @Override
@@ -360,12 +364,17 @@ public class AuthServiceImpl implements AuthService {
             result.put("preferences", null);
         }
 
-        // Fetch user feedback
-        List<Map<String, Object>> feedback = jdbcTemplate.queryForList(
-                // Added backticks to `comment` and `feedback` to avoid SQL reserved keyword conflicts
-                "SELECT id, product_id, rating, `comment`, created_at FROM `feedback` WHERE user_id = ? ORDER BY created_at DESC",
-                userId
-        );
+        // Fetch user feedback using JpaRepository
+        List<Feedback> feedbackEntities = feedbackRepository.findByUserIdOrderByCreatedAtDesc(userId);
+        List<Map<String, Object>> feedback = feedbackEntities.stream().map(f -> {
+            Map<String, Object> feedbackMap = new HashMap<>();
+            feedbackMap.put("id", f.getId());
+            feedbackMap.put("product_id", f.getProduct() != null ? f.getProduct().getId() : null); // Assuming Product has an ID
+            feedbackMap.put("rating", f.getRating());
+            feedbackMap.put("comment", f.getComment());
+            feedbackMap.put("created_at", f.getCreatedAt());
+            return feedbackMap;
+        }).collect(Collectors.toList());
         result.put("feedback", feedback);
 
         // Fetch user events
