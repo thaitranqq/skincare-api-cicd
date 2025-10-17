@@ -53,7 +53,7 @@ public class AdminServiceImpl implements AdminService {
 
     @Override
     public SearchStatsDTO getSearchFrequencyStats() {
-        // Placeholder logic: This would require logging search queries and barcode scans in an \'events\' table or similar
+        // Placeholder logic: This would require logging search queries and barcode scans in an 'events' table or similar
         SearchStatsDTO stats = new SearchStatsDTO();
         stats.setBarcodeScans(Collections.emptyList());
         stats.setKeywordSearches(Collections.emptyList());
