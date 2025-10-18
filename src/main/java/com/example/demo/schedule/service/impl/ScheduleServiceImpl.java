@@ -9,6 +9,8 @@ import com.example.demo.repository.ScheduleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.dao.EmptyResultDataAccessException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 public class ScheduleServiceImpl implements ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     @Override
     public List<ScheduleDTO> getAllSchedules() {
@@ -49,6 +52,30 @@ public class ScheduleServiceImpl implements ScheduleService {
 
     @Override
     public ScheduleDTO createSchedule(ScheduleCreateRequest request) {
+        // Validate if the user exists
+        Long userId = request.getUserId();
+        if (userId != null) {
+            try {
+                jdbcTemplate.queryForObject("SELECT id FROM users WHERE id = ?", Long.class, userId);
+            } catch (EmptyResultDataAccessException e) {
+                throw new RuntimeException("User not found with id: " + userId);
+            }
+        } else {
+            throw new RuntimeException("User ID cannot be null for schedule creation.");
+        }
+
+        // Validate if the product exists
+        Long productId = request.getProductId();
+        if (productId != null) {
+            try {
+                jdbcTemplate.queryForObject("SELECT id FROM products WHERE id = ?", Long.class, productId);
+            } catch (EmptyResultDataAccessException e) {
+                throw new RuntimeException("Product not found with id: " + productId);
+            }
+        } else {
+            throw new RuntimeException("Product ID cannot be null for schedule creation.");
+        }
+
         Schedule schedule = new Schedule();
         schedule.setUserId(request.getUserId());
         schedule.setProductId(request.getProductId());
@@ -71,6 +98,13 @@ public class ScheduleServiceImpl implements ScheduleService {
             schedule.setChannel(HtmlUtils.htmlEscape(request.getChannel()));
         }
         if (request.getProductId() != null) {
+            // Validate if the product exists
+            Long productId = request.getProductId();
+            try {
+                jdbcTemplate.queryForObject("SELECT id FROM products WHERE id = ?", Long.class, productId);
+            } catch (EmptyResultDataAccessException e) {
+                throw new RuntimeException("Product not found with id: " + productId);
+            }
             schedule.setProductId(request.getProductId());
         }
 

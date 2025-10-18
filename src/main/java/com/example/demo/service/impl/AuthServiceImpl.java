@@ -230,6 +230,14 @@ public class AuthServiceImpl implements AuthService {
     public void updateMe(Long userId, Map<String, Object> body) {
         Objects.requireNonNull(userId);
         Objects.requireNonNull(body);
+
+        // Validate if the user exists
+        try {
+            jdbcTemplate.queryForObject("SELECT id FROM users WHERE id = ?", Long.class, userId);
+        } catch (EmptyResultDataAccessException e) {
+            throw new RuntimeException("User not found with id: " + userId);
+        }
+
         if (body.containsKey("email")) {
             jdbcTemplate.update("UPDATE users SET email = ? WHERE id = ?", body.get("email"), userId);
         }
