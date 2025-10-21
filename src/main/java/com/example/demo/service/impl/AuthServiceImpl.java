@@ -411,7 +411,15 @@ public class AuthServiceImpl implements AuthService {
         for (Map<String, Object> entry : journalEntries) {
             Long entryId = ((Number) entry.get("id")).longValue();
             List<Map<String, Object>> photos = jdbcTemplate.queryForList("SELECT id, file_key, ai_features_json FROM journal_photos WHERE entry_id = ?", entryId);
-            entry.put("photos", photos.stream().map(this::parseJsonFields).collect(Collectors.toList()));
+            List<Map<String, Object>> photosWithUrls = photos.stream().map(photo -> {
+                Map<String, Object> photoMap = new HashMap<>(photo);
+                String fileKey = (String) photo.get("file_key");
+                if (fileKey != null && !fileKey.isEmpty()) {
+                    photoMap.put("imageUrl", fileKey); // Directly use fileKey as imageUrl
+                }
+                return parseJsonFields(photoMap);
+            }).collect(Collectors.toList());
+            entry.put("photos", photosWithUrls);
         }
         result.put("journal", journalEntries);
 
