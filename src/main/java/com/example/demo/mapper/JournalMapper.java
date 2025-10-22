@@ -11,7 +11,6 @@ import org.mapstruct.Named;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface JournalMapper {
@@ -34,6 +33,6 @@ public interface JournalMapper {
         }
         return photos.stream()
                 .map(this::toJournalPhotoDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
