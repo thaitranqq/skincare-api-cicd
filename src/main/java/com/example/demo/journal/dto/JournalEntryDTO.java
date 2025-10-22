@@ -11,5 +11,5 @@ public class JournalEntryDTO {
     private Long userId;
     private LocalDate date;
     private String textNote;
-    private List<Long> photoIds; // Changed from List<JournalPhotoDTO> to List<Long>
+    private List<JournalPhotoDTO> photos;
 }

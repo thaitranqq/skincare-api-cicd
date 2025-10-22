@@ -7,6 +7,7 @@ import com.example.demo.model.JournalEntry;
 import com.example.demo.model.JournalPhoto;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 
 import java.util.Collections;
 import java.util.List;
@@ -15,7 +16,7 @@ import java.util.stream.Collectors;
 @Mapper(componentModel = "spring")
 public interface JournalMapper {
 
-    @Mapping(source = "photos", target = "photoIds")
+    @Mapping(source = "photos", target = "photos", qualifiedByName = "photosToPhotoDTOs")
     JournalEntryDTO toJournalEntryDTO(JournalEntry journalEntry);
 
     @Mapping(target = "id", ignore = true)
@@ -23,14 +24,16 @@ public interface JournalMapper {
     JournalEntry toJournalEntry(JournalEntryCreateRequest request);
 
     @Mapping(source = "journalEntry.id", target = "entryId")
+    @Mapping(source = "fileKey", target = "imageUrl")
     JournalPhotoDTO toJournalPhotoDTO(JournalPhoto journalPhoto);
 
-    default List<Long> mapPhotosToIds(List<JournalPhoto> photos) {
+    @Named("photosToPhotoDTOs")
+    default List<JournalPhotoDTO> mapPhotosToPhotoDTOs(List<JournalPhoto> photos) {
         if (photos == null || photos.isEmpty()) {
             return Collections.emptyList();
         }
         return photos.stream()
-                .map(JournalPhoto::getId)
+                .map(this::toJournalPhotoDTO)
                 .collect(Collectors.toList());
     }
 }
