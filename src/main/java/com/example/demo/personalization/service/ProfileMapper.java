@@ -1,6 +1,7 @@
 package com.example.demo.personalization.service;
 
 import com.example.demo.personalization.dto.ProfileDTO;
+import com.example.demo.personalization.model.SkinType;
 import com.example.demo.model.Profile;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -22,7 +23,14 @@ public class ProfileMapper {
         if (p == null) return null;
         ProfileDTO d = new ProfileDTO();
         d.setUserId(p.getUserId());
-        d.setSkinType(p.getSkinType());
+        // Handle SkinType conversion from String to Enum safely
+        try {
+            d.setSkinType(p.getSkinType() != null ? SkinType.valueOf(p.getSkinType()) : null);
+        } catch (IllegalArgumentException e) {
+            logger.error("Invalid SkinType value in DB for userId {}: {}. Setting to null.", p.getUserId(), p.getSkinType());
+            d.setSkinType(null);
+        }
+
         try {
             List<String> concerns = p.getConcerns() == null ? Collections.emptyList()
                     : om.readValue(p.getConcerns(), new TypeReference<List<String>>() {});
@@ -62,7 +70,9 @@ public class ProfileMapper {
     public Profile toEntity(Profile existing, ProfileDTO dto) {
         Profile p = existing == null ? new Profile() : existing;
         if (dto.getUserId() != null) p.setUserId(dto.getUserId());
-        p.setSkinType(dto.getSkinType());
+        // Handle SkinType conversion from Enum to String safely
+        p.setSkinType(dto.getSkinType() != null ? dto.getSkinType().name() : null);
+
         try { p.setConcerns(dto.getConcerns() == null ? null : om.writeValueAsString(dto.getConcerns())); } catch (Exception e) { logger.error("Error writing concerns JSON for userId {}: {}", dto.getUserId(), e.getMessage()); p.setConcerns(null); }
         try { p.setAllergies(dto.getAllergies() == null ? null : om.writeValueAsString(dto.getAllergies())); } catch (Exception e) { logger.error("Error writing allergies JSON for userId {}: {}", dto.getUserId(), e.getMessage()); p.setAllergies(null); }
         p.setPregnant(dto.getPregnant());

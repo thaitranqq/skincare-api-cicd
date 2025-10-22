@@ -1,6 +1,5 @@
 package com.example.demo.model;
 
-import com.example.demo.personalization.model.SkinType;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -13,8 +12,7 @@ public class Profile {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long userId; // PK
 
-    @Enumerated(EnumType.STRING)
-    private SkinType skinType;
+    private String skinType;
 
     @Column(columnDefinition = "text")
     private String concerns; // JSON array string
