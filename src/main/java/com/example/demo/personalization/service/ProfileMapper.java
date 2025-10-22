@@ -5,6 +5,8 @@ import com.example.demo.model.Profile;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -13,6 +15,7 @@ import java.util.Map;
 @Component
 public class ProfileMapper {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProfileMapper.class);
     private final ObjectMapper om = new ObjectMapper();
 
     public ProfileDTO toDto(Profile p) {
@@ -25,6 +28,7 @@ public class ProfileMapper {
                     : om.readValue(p.getConcerns(), new TypeReference<List<String>>() {});
             d.setConcerns(concerns);
         } catch (Exception e) {
+            logger.error("Error parsing concerns JSON for userId {}: {}", p.getUserId(), e.getMessage());
             d.setConcerns(Collections.emptyList());
         }
         try {
@@ -32,6 +36,7 @@ public class ProfileMapper {
                     : om.readValue(p.getAllergies(), new TypeReference<List<String>>() {});
             d.setAllergies(allergies);
         } catch (Exception e) {
+            logger.error("Error parsing allergies JSON for userId {}: {}", p.getUserId(), e.getMessage());
             d.setAllergies(Collections.emptyList());
         }
         d.setPregnant(p.getPregnant());
@@ -40,6 +45,7 @@ public class ProfileMapper {
                     : om.readValue(p.getGoals(), new TypeReference<List<String>>() {});
             d.setGoals(goals);
         } catch (Exception e) {
+            logger.error("Error parsing goals JSON for userId {}: {}", p.getUserId(), e.getMessage());
             d.setGoals(Collections.emptyList());
         }
         try {
@@ -47,6 +53,7 @@ public class ProfileMapper {
                     : om.readValue(p.getLifestyleJson(), new TypeReference<Map<String, Object>>() {});
             d.setLifestyle(lifestyle);
         } catch (Exception e) {
+            logger.error("Error parsing lifestyle JSON for userId {}: {}", p.getUserId(), e.getMessage());
             d.setLifestyle(Collections.emptyMap());
         }
         return d;
@@ -56,12 +63,11 @@ public class ProfileMapper {
         Profile p = existing == null ? new Profile() : existing;
         if (dto.getUserId() != null) p.setUserId(dto.getUserId());
         p.setSkinType(dto.getSkinType());
-        try { p.setConcerns(dto.getConcerns() == null ? null : om.writeValueAsString(dto.getConcerns())); } catch (Exception e) { p.setConcerns(null); }
-        try { p.setAllergies(dto.getAllergies() == null ? null : om.writeValueAsString(dto.getAllergies())); } catch (Exception e) { p.setAllergies(null); }
+        try { p.setConcerns(dto.getConcerns() == null ? null : om.writeValueAsString(dto.getConcerns())); } catch (Exception e) { logger.error("Error writing concerns JSON for userId {}: {}", dto.getUserId(), e.getMessage()); p.setConcerns(null); }
+        try { p.setAllergies(dto.getAllergies() == null ? null : om.writeValueAsString(dto.getAllergies())); } catch (Exception e) { logger.error("Error writing allergies JSON for userId {}: {}", dto.getUserId(), e.getMessage()); p.setAllergies(null); }
         p.setPregnant(dto.getPregnant());
-        try { p.setGoals(dto.getGoals() == null ? null : om.writeValueAsString(dto.getGoals())); } catch (Exception e) { p.setGoals(null); }
-        try { p.setLifestyleJson(dto.getLifestyle() == null ? null : om.writeValueAsString(dto.getLifestyle())); } catch (Exception e) { p.setLifestyleJson(null); }
+        try { p.setGoals(dto.getGoals() == null ? null : om.writeValueAsString(dto.getGoals())); } catch (Exception e) { logger.error("Error writing goals JSON for userId {}: {}", dto.getUserId(), e.getMessage()); p.setGoals(null); }
+        try { p.setLifestyleJson(dto.getLifestyle() == null ? null : om.writeValueAsString(dto.getLifestyle())); } catch (Exception e) { logger.error("Error writing lifestyle JSON for userId {}: {}", dto.getUserId(), e.getMessage()); p.setLifestyleJson(null); }
         return p;
     }
 }
-

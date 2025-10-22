@@ -1,5 +1,7 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.exception.InvalidRequestException;
+import com.example.demo.exception.ResourceNotFoundException;
 import com.example.demo.personalization.dto.ProfileDTO;
 import com.example.demo.model.Profile;
 import com.example.demo.repository.ProfileRepository;
@@ -7,6 +9,8 @@ import com.example.demo.personalization.service.ProfileMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.example.demo.service.ProfileService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -15,23 +19,36 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProfileServiceImpl implements ProfileService {
 
+    private static final Logger logger = LoggerFactory.getLogger(ProfileServiceImpl.class);
+
     private final ProfileRepository profileRepository;
     private final ProfileMapper profileMapper;
 
     public ProfileDTO getProfile(Long userId) {
-        Optional<Profile> p = profileRepository.findById(userId);
-        return p.map(profileMapper::toDto).orElseGet(() -> {
-            // return empty default profile
-            ProfileDTO d = new ProfileDTO();
-            d.setUserId(userId);
-            d.setSkinType(null);
-            d.setConcerns(Collections.emptyList());
-            d.setAllergies(Collections.emptyList());
-            d.setPregnant(false);
-            d.setGoals(Collections.emptyList());
-            d.setLifestyle(Collections.emptyMap());
-            return d;
-        });
+        try {
+            Optional<Profile> p = profileRepository.findById(userId);
+            if (p.isPresent()) {
+                return profileMapper.toDto(p.get());
+            } else {
+                return createDefaultProfileDTO(userId);
+            }
+        } catch (IllegalArgumentException e) {
+            // This catches issues like invalid enum values in the database (e.g., SkinType)
+            logger.error("Data integrity issue: Invalid enum value found for userId {}. Returning default profile. Error: {}", userId, e.getMessage());
+            return createDefaultProfileDTO(userId);
+        }
+    }
+
+    private ProfileDTO createDefaultProfileDTO(Long userId) {
+        ProfileDTO d = new ProfileDTO();
+        d.setUserId(userId);
+        d.setSkinType(null);
+        d.setConcerns(Collections.emptyList());
+        d.setAllergies(Collections.emptyList());
+        d.setPregnant(false);
+        d.setGoals(Collections.emptyList());
+        d.setLifestyle(Collections.emptyMap());
+        return d;
     }
 
     public ProfileDTO updateProfile(Long userId, ProfileDTO body) {
@@ -61,11 +78,19 @@ public class ProfileServiceImpl implements ProfileService {
         ProfileDTO profile = getProfile(userId);
 
         if (body.containsKey("prefer_functions")) {
-            profile.setGoals((List<String>) body.get("prefer_functions"));
+            try {
+                profile.setGoals((List<String>) body.get("prefer_functions"));
+            } catch (ClassCastException e) {
+                throw new InvalidRequestException("Invalid format for prefer_functions");
+            }
         }
 
         if (body.containsKey("avoid_ingredients")) {
-            profile.setAllergies((List<String>) body.get("avoid_ingredients"));
+            try {
+                profile.setAllergies((List<String>) body.get("avoid_ingredients"));
+            } catch (ClassCastException e) {
+                throw new InvalidRequestException("Invalid format for avoid_ingredients");
+            }
         }
 
         Map<String, Object> lifestyle = profile.getLifestyle() != null ? new HashMap<>(profile.getLifestyle()) : new HashMap<>();
@@ -178,7 +203,7 @@ public class ProfileServiceImpl implements ProfileService {
                     // Add more goal-product keyword mappings here
                     return false;
                 })
-                .collect(Collectors.toList());
+                .toList(); // Changed to toList()
 
             if (!matchedGoals.isEmpty()) {
                 reasons.add("Product aligns with goals: " + String.join(", ", matchedGoals) + ".");
@@ -191,8 +216,9 @@ public class ProfileServiceImpl implements ProfileService {
     private int checkBudget(ProfileDTO profile, double productPrice, List<String> reasons, int currentScore) {
         Map<String, Object> lifestyle = profile.getLifestyle();
         if (lifestyle != null) {
-            Integer budgetMin = (Integer) lifestyle.getOrDefault("budget_min", 0);
-            Integer budgetMax = (Integer) lifestyle.getOrDefault("budget_max", 200); // Default max if not set
+            // Safely cast to Number and then to Integer, or handle potential ClassCastException
+            Integer budgetMin = ((Number) lifestyle.getOrDefault("budget_min", 0)).intValue();
+            Integer budgetMax = ((Number) lifestyle.getOrDefault("budget_max", 200)).intValue(); // Default max if not set
 
             if (productPrice < budgetMin) {
                 reasons.add("Product price (" + productPrice + ") is below preferred budget minimum (" + budgetMin + ").");
