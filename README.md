@@ -27,14 +27,14 @@
 ## Cấu trúc dự án
 ```
 demo/
-├── .mvn/                   # Maven wrapper
+├── .github/                 # Cấu hình GitHub Actions (CI/CD)
 ├── src/
 │   ├── main/
 │   │   ├── java/            # Mã nguồn Java của ứng dụng
 │   │   └── resources/       # Tệp cấu hình, script SQL, v.v.
 │   │       └── db/migration/ # Các script di chuyển cơ sở dữ liệu của Flyway
 │   └── test/                # Mã nguồn kiểm thử
-├── .gitignore               # Các tệp và thư mục bị Git bỏ qua
+├── Dockerfile               # Định nghĩa để build Docker image cho ứng dụng
 ├── docker-compose.yml       # Định nghĩa các dịch vụ để phát triển
 ├── mvnw, mvnw.cmd           # Maven wrapper
 ├── pom.xml                  # Tệp cấu hình dự án của Maven
@@ -81,89 +81,43 @@ demo/
     Ứng dụng sẽ chạy tại `http://localhost:8080`.
 
 ## API Endpoints
+(Xem chi tiết tại `http://localhost:8080/swagger-ui.html` sau khi khởi động ứng dụng)
 
-### Authentication (`/api/v1/auth`)
-*   `POST /signup`: Đăng ký người dùng mới.
-*   `POST /signin`: Đăng nhập, trả về access và refresh tokens.
-*   `POST /refresh`: Làm mới access token.
-*   `GET /me`: Lấy thông tin người dùng hiện tại.
+## Triển khai với Docker
 
-### User Profile (`/api/v1/profile`)
-*   `GET /`: Lấy hồ sơ người dùng.
-*   `PUT /`: Cập nhật hồ sơ người dùng.
-
-### Administration (`/api/v1/admin`)
-*   `GET /trends/users`: Lấy dữ liệu xu hướng người dùng.
-*   `GET /events`: Lấy danh sách các sự kiện hệ thống.
-
-(Xem chi tiết tại `http://localhost:8080/swagger-ui.html`)
-
-## Xử lý lỗi
-Ứng dụng sử dụng một `GlobalExceptionHandler` (`@ControllerAdvice`) để bắt các ngoại lệ và trả về các phản hồi lỗi JSON nhất quán.
-
-*   **Cấu trúc phản hồi lỗi**:
-    ```json
-    {
-      "error": "Mô tả lỗi chi tiết"
-    }
+1.  **Build Docker Image**:
+    ```bash
+    docker build -t your-app-name:latest .
     ```
-*   **Các mã trạng thái HTTP phổ biến**:
-    *   `400 Bad Request`: Đối với các yêu cầu không hợp lệ (ví dụ: thiếu trường bắt buộc).
-    *   `401 Unauthorized`: Khi xác thực thất bại hoặc thiếu thông tin xác thực.
-    *   `403 Forbidden`: Khi người dùng không có quyền truy cập tài nguyên.
-    *   `404 Not Found`: Khi tài nguyên được yêu cầu không tồn tại.
-    *   `500 Internal Server Error`: Đối với các lỗi không mong muốn phía máy chủ.
 
-## Các vấn đề về bảo mật
-*   **Xác thực JWT**: Luồng xác thực hoạt động như sau:
-    1.  Người dùng gửi thông tin đăng nhập (`/api/v1/auth/signin`).
-    2.  Máy chủ xác thực và trả về một `accessToken` (ngắn hạn) và một `refreshToken` (dài hạn).
-    3.  Client gửi `accessToken` trong header `Authorization` (dưới dạng `Bearer <token>`) cho mỗi yêu cầu cần xác thực.
-    4.  Nếu `accessToken` hết hạn, client sử dụng `refreshToken` để nhận một `accessToken` mới.
-*   **HTTPS**: Trong môi trường sản xuất, luôn sử dụng HTTPS để mã hóa tất cả lưu lượng truy cập giữa client và máy chủ, bảo vệ dữ liệu nhạy cảm như mã thông báo và thông tin người dùng.
-*   **Xác thực đầu vào**: Ứng dụng thực hiện xác thực đầu vào để chống lại các cuộc tấn công như SQL Injection và Cross-Site Scripting (XSS).
-
-## Quản lý Di chuyển Cơ sở dữ liệu với Flyway
-Flyway tự động quản lý và áp dụng các thay đổi lược đồ cơ sở dữ liệu khi ứng dụng khởi động.
-*   **Vị trí Script**: Các tập lệnh di chuyển SQL được đặt tại `src/main/resources/db/migration`.
-*   **Quy ước đặt tên**: Các tập lệnh phải tuân theo quy ước `V<VERSION>__<DESCRIPTION>.sql`. Ví dụ: `V1__Create_user_table.sql`.
-*   **Cách hoạt động**: Flyway kiểm tra bảng `flyway_schema_history` để xác định các tập lệnh di chuyển mới cần được áp dụng.
-
-## Ghi nhật ký (Logging)
-*   **Cấu hình**: Spring Boot sử dụng Logback làm cơ chế ghi nhật ký mặc định. Bạn có thể tùy chỉnh cấp độ ghi nhật ký trong `application.properties`:
-    ```properties
-    # Đặt cấp độ ghi nhật ký mặc định là INFO
-    logging.level.root=INFO
-    # Đặt cấp độ DEBUG cho mã nguồn của ứng dụng
-    logging.level.com.example.demo=DEBUG
+2.  **Chạy Docker Container**:
+    ```bash
+    docker run -p 8080:8080 \
+      -e SPRING_DATASOURCE_URL="jdbc:mysql://<your_db_host>:3306/geniedb" \
+      -e SPRING_DATASOURCE_USERNAME="your_db_user" \
+      -e SPRING_DATASOURCE_PASSWORD="your_db_password" \
+      -e APP_JWT_SECRET="your_super_secret_jwt_key" \
+      your-app-name:latest
     ```
-*   **Đầu ra**: Nhật ký được in ra console theo mặc định. Trong môi trường sản xuất, bạn nên cấu hình để ghi nhật ký vào tệp và sử dụng các công cụ tổng hợp nhật ký.
 
-## Quản lý Cấu hình Nâng cao
-Spring Boot hỗ trợ các hồ sơ (profiles) để quản lý cấu hình cho các môi trường khác nhau.
-*   **Tệp cấu hình theo hồ sơ**: Bạn có thể tạo các tệp `application-{profile}.properties` (ví dụ: `application-dev.properties`, `application-prod.properties`).
-*   **Kích hoạt hồ sơ**: Đặt thuộc tính `spring.profiles.active=your_profile` trong `application.properties` hoặc thông qua biến môi trường `SPRING_PROFILES_ACTIVE`.
+## Tích hợp và Triển khai liên tục (CI/CD)
+Dự án này được cấu hình để sử dụng GitHub Actions cho CI/CD (xem thư mục `.github/workflows`). Quy trình làm việc mẫu thường bao gồm các bước sau:
+1.  **Trigger**: Kích hoạt khi có push lên nhánh `main` hoặc khi tạo Pull Request.
+2.  **Build & Test**: Checkout mã nguồn, thiết lập JDK, và chạy `./mvnw clean install` để biên dịch và thực thi các bài kiểm thử.
+3.  **Build Docker Image**: Nếu các bài kiểm thử thành công, build Docker image và đẩy lên một registry (ví dụ: Docker Hub, GitHub Container Registry).
+4.  **Deploy**: (Tùy chọn) Tự động triển khai image lên một môi trường (staging hoặc production).
 
-## Phong cách mã hóa và Quy ước
-*   **Định dạng mã**: Sử dụng các quy ước định dạng mã Java tiêu chuẩn. Hầu hết các IDE đều có thể tự động định dạng mã.
-*   **Lombok**: Dự án sử dụng Lombok để giảm mã soạn sẵn. Hãy tận dụng các chú thích như `@Data`, `@Getter`, `@Setter`, `@NoArgsConstructor`, `@AllArgsConstructor`.
-*   **Quy ước đặt tên**: Tuân thủ các quy ước đặt tên tiêu chuẩn của Java (ví dụ: `camelCase` cho các phương thức và biến, `PascalCase` cho các lớp).
+## Hướng dẫn Đóng góp
 
-## Khắc phục sự cố
-*   **Lỗi `Port 8080 already in use`**: Một tiến trình khác đang sử dụng cổng 8080. Dừng tiến trình đó hoặc thay đổi cổng của ứng dụng bằng cách thêm `server.port=new_port` vào `application.properties`.
-*   **Lỗi kết nối cơ sở dữ liệu**: Đảm bảo container Docker MySQL đang chạy (`docker ps`). Kiểm tra lại thông tin đăng nhập và URL trong `application.properties`.
-*   **Lỗi Flyway `Validate failed`**: Lược đồ cơ sở dữ liệu hiện tại không khớp với các tập lệnh di chuyển. Điều này có thể xảy ra nếu bạn thay đổi một tập lệnh đã được áp dụng. Để khắc phục, bạn có thể cần phải sửa chữa lược đồ Flyway (`./mvnw flyway:repair`) hoặc xóa và tạo lại cơ sở dữ liệu.
+1.  **Fork & Clone**: Fork repository về tài khoản của bạn và clone về máy.
+2.  **Tạo Nhánh**: Tạo một nhánh mới từ nhánh `develop` (hoặc `main` nếu không có `develop`) cho mỗi tính năng hoặc bản sửa lỗi: `git checkout -b feature/ten-tinh-nang`.
+3.  **Commit Changes**: Thực hiện các thay đổi và commit với một thông điệp rõ ràng theo quy ước (ví dụ: `feat: Add user authentication`).
+4.  **Push và Pull Request**: Đẩy nhánh của bạn lên repository đã fork và tạo một Pull Request (PR) tới nhánh `develop` của repository gốc.
 
-## Chạy Kiểm thử
-```bash
-./mvnw test
-```
+## Lộ trình Phát triển (Roadmap)
+*   **Q2 2024**: Hoàn thiện các tính năng cốt lõi, cải thiện độ bao phủ của kiểm thử.
+*   **Q3 2024**: Tích hợp thêm các nhà cung cấp OAuth2, triển khai hệ thống thông báo đẩy.
+*   **Q4 2024**: Tối ưu hóa hiệu năng, xem xét triển khai kiến trúc microservices cho các thành phần cụ thể.
 
-## Triển khai
-```bash
-./mvnw clean package
-```
-Tệp JAR thực thi sẽ được tạo tại `target/demo-0.0.1-SNAPSHOT.jar`.
-
-## Đóng góp và Giấy phép
-Dự án này được cấp phép theo Giấy phép MIT. Vui lòng fork repository và gửi pull request để đóng góp.
+## Giấy phép
+Dự án này được cấp phép theo Giấy phép MIT.
